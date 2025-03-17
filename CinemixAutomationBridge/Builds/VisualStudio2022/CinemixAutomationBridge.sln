@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio Version 17
+
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CinemixAutomationBridge - Standalone Plugin", "CinemixAutomationBridge_StandalonePlugin.vcxproj", "{993C2A2F-8361-9C0B-DC9C-62617A07FF4F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83} = {1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CinemixAutomationBridge - VST3", "CinemixAutomationBridge_VST3.vcxproj", "{0BBD3F31-FA59-5426-06FB-AEBD46D51F2D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83} = {1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}
+		{75789937-2BFB-B230-7C54-1B816E25434D} = {75789937-2BFB-B230-7C54-1B816E25434D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CinemixAutomationBridge - Shared Code", "CinemixAutomationBridge_SharedCode.vcxproj", "{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CinemixAutomationBridge - VST3 Manifest Helper", "CinemixAutomationBridge_VST3ManifestHelper.vcxproj", "{75789937-2BFB-B230-7C54-1B816E25434D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BBD3F31-FA59-5426-06FB-AEBD46D51F2D}.Debug|x64.ActiveCfg = Debug|x64
+		{0BBD3F31-FA59-5426-06FB-AEBD46D51F2D}.Debug|x64.Build.0 = Debug|x64
+		{0BBD3F31-FA59-5426-06FB-AEBD46D51F2D}.Release|x64.ActiveCfg = Release|x64
+		{0BBD3F31-FA59-5426-06FB-AEBD46D51F2D}.Release|x64.Build.0 = Release|x64
+		{993C2A2F-8361-9C0B-DC9C-62617A07FF4F}.Debug|x64.ActiveCfg = Debug|x64
+		{993C2A2F-8361-9C0B-DC9C-62617A07FF4F}.Debug|x64.Build.0 = Debug|x64
+		{993C2A2F-8361-9C0B-DC9C-62617A07FF4F}.Release|x64.ActiveCfg = Release|x64
+		{993C2A2F-8361-9C0B-DC9C-62617A07FF4F}.Release|x64.Build.0 = Release|x64
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}.Debug|x64.ActiveCfg = Debug|x64
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}.Debug|x64.Build.0 = Debug|x64
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}.Release|x64.ActiveCfg = Release|x64
+		{1FF6EDFF-D6B0-8913-2E69-C849C3C77F83}.Release|x64.Build.0 = Release|x64
+		{75789937-2BFB-B230-7C54-1B816E25434D}.Debug|x64.ActiveCfg = Debug|x64
+		{75789937-2BFB-B230-7C54-1B816E25434D}.Debug|x64.Build.0 = Debug|x64
+		{75789937-2BFB-B230-7C54-1B816E25434D}.Release|x64.ActiveCfg = Release|x64
+		{75789937-2BFB-B230-7C54-1B816E25434D}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
