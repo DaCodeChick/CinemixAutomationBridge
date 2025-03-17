@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio
+.vs/
+Builds/VisualStudio2022/x64/
