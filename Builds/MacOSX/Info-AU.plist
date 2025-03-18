@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist>
+  <dict>
+    <key>CFBundleExecutable</key>
+    <string>${EXECUTABLE_NAME}</string>
+    <key>CFBundleIconFile</key>
+    <string></string>
+    <key>CFBundleIdentifier</key>
+    <string>com.yourcompany.CinemixAutomationBridge</string>
+    <key>CFBundleName</key>
+    <string>CinemixAutomationBridge</string>
+    <key>CFBundleDisplayName</key>
+    <string>CinemixAutomationBridge</string>
+    <key>CFBundlePackageType</key>
+    <string>BNDL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string></string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.music</string>
+    <key>AudioComponents</key>
+    <array>
+      <dict>
+        <key>name</key>
+        <string>DaCodingChick: CinemixAutomationBridge</string>
+        <key>description</key>
+        <string>CinemixAutomationBridge</string>
+        <key>factoryFunction</key>
+        <string>CinemixAutomationBridgeAUFactory</string>
+        <key>manufacturer</key>
+        <string>Kuku</string>
+        <key>type</key>
+        <string>aumu</string>
+        <key>subtype</key>
+        <string>Jf6j</string>
+        <key>version</key>
+        <integer>65536</integer>
+        <key>resourceUsage</key>
+        <dict>
+          <key>network.client</key>
+          <true/>
+          <key>temporary-exception.files.all.read-write</key>
+          <true/>
+        </dict>
+      </dict>
+    </array>
+  </dict>
+</plist>
