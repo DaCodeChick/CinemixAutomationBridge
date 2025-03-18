@@ -189,3 +189,16 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new CinemixAutomationBridgeAudioProcessor();
 }
+
+
+void CinemixAutomationBridgeAudioProcessor::testModeToggle()
+{
+    if (_testMode)
+    {
+        _testMode = false
+    }
+    else
+    {
+        _testMode = true;
+    }
+}
