@@ -16,14 +16,15 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "ChannelStripComponent.h"
 
 //==============================================================================
 /**
  * CinemixBridgeEditor
  * 
  * Main GUI editor for the Cinemix Automation Bridge plugin.
- * Phase 1: Basic placeholder UI to verify the plugin loads.
- * Full UI will be implemented in Phases 5-6.
+ * Phase 5: Single channel strip UI for testing.
+ * Full 36-channel UI will be implemented in Phase 6.
  */
 class CinemixBridgeEditor  : public juce::AudioProcessorEditor
 {
@@ -38,9 +39,8 @@ public:
 private:
     CinemixBridgeProcessor& audioProcessor;
 
-    // Placeholder label for Phase 1
-    juce::Label titleLabel;
-    juce::Label statusLabel;
+    // Phase 5: Single channel strip for testing
+    std::unique_ptr<ChannelStripComponent> channelStrip;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CinemixBridgeEditor)
 };

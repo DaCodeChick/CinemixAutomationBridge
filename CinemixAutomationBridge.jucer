@@ -21,6 +21,10 @@
             file="Source/MidiRouter.cpp"/>
       <FILE id="MRh8Qz" name="MidiRouter.h" compile="0" resource="0"
             file="Source/MidiRouter.h"/>
+      <FILE id="CScomp" name="ChannelStripComponent.cpp" compile="1" resource="0"
+            file="Source/ChannelStripComponent.cpp"/>
+      <FILE id="CShdr" name="ChannelStripComponent.h" compile="0" resource="0"
+            file="Source/ChannelStripComponent.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>

@@ -559,6 +559,9 @@
     <ClCompile Include="..\..\Source\MidiRouter.cpp">
       <Filter>CinemixAutomationBridge\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\ChannelStripComponent.cpp">
+      <Filter>CinemixAutomationBridge\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.cpp">
       <Filter>JUCE Modules\juce_audio_basics\audio_play_head</Filter>
     </ClCompile>
@@ -2683,6 +2686,9 @@
       <Filter>CinemixAutomationBridge\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\MidiRouter.h">
+      <Filter>CinemixAutomationBridge\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ChannelStripComponent.h">
       <Filter>CinemixAutomationBridge\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h">

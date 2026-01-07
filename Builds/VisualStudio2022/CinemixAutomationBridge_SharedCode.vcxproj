@@ -142,6 +142,7 @@
     <ClCompile Include="..\..\Source\PluginProcessor.cpp"/>
     <ClCompile Include="..\..\Source\PluginEditor.cpp"/>
     <ClCompile Include="..\..\Source\MidiRouter.cpp"/>
+    <ClCompile Include="..\..\Source\ChannelStripComponent.cpp"/>
     <ClCompile Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2096,6 +2097,7 @@
     <ClInclude Include="..\..\Source\PluginProcessor.h"/>
     <ClInclude Include="..\..\Source\PluginEditor.h"/>
     <ClInclude Include="..\..\Source\MidiRouter.h"/>
+    <ClInclude Include="..\..\Source\ChannelStripComponent.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\buffers\juce_AudioChannelSet.h"/>
     <ClInclude Include="..\..\..\..\..\..\..\usr\share\juce\modules\juce_audio_basics\buffers\juce_AudioDataConverters.h"/>

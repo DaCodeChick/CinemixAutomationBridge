@@ -22,26 +22,10 @@ CinemixBridgeEditor::CinemixBridgeEditor (CinemixBridgeProcessor& p)
     // Set fixed window size (as per PLAN.md)
     setSize (920, 560);
     
-    // Setup title label
-    addAndMakeVisible(titleLabel);
-    titleLabel.setText("CinemixAutomationBridge", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(32.0f, juce::Font::bold));
-    titleLabel.setJustificationType(juce::Justification::centred);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    
-    // Setup status label
-    addAndMakeVisible(statusLabel);
-    statusLabel.setText("Phase 1: Basic UI - Plugin Loaded Successfully!\n\n"
-                       "161 Parameters Created:\n"
-                       "- 72 Faders (36 channels x 2 rows)\n"
-                       "- 72 Mutes (36 channels x 2 rows)\n"
-                       "- 10 AUX Mutes\n"
-                       "- 7 Master Section Parameters\n\n"
-                       "Next Phase: MIDI Infrastructure", 
-                       juce::dontSendNotification);
-    statusLabel.setFont(juce::Font(16.0f));
-    statusLabel.setJustificationType(juce::Justification::centred);
-    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+    // Phase 5: Create and display a single channel strip for testing
+    // Using channel 0 (M1) as test channel
+    channelStrip = std::make_unique<ChannelStripComponent>(audioProcessor.getAPVTS(), 0);
+    addAndMakeVisible(*channelStrip);
 }
 
 CinemixBridgeEditor::~CinemixBridgeEditor()
@@ -69,9 +53,8 @@ void CinemixBridgeEditor::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Title at top
-    titleLabel.setBounds(bounds.removeFromTop(100).reduced(20, 20));
-    
-    // Status label in center
-    statusLabel.setBounds(bounds.reduced(40));
+    // Position channel strip in top-left corner with some padding
+    // Channel strip is 22px wide × 540px tall
+    if (channelStrip)
+        channelStrip->setBounds(20, 10, 22, 540);
 }
