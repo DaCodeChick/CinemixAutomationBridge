@@ -27,47 +27,71 @@
 /* Begin PBXBuildFile section */
 		03DD65AD811571E2F913FBD6 /* Accelerate.framework */ = {isa = PBXBuildFile; fileRef = DB5CCF2DE376F1738CBFBD54; };
 		043147E91F7C2D4BBA2255F8 /* Shared Code */ = {isa = PBXBuildFile; fileRef = 5C325D76F755E26F624E0717; };
+		0B2C9D49344144242DD80FEC /* include_juce_audio_processors.mm */ = {isa = PBXBuildFile; fileRef = 30724192EF56B77014DEBC0F; };
 		0C2A4FB8767B4D48B170384C /* include_juce_data_structures.mm */ = {isa = PBXBuildFile; fileRef = E17BC378E26CA13B65A582DB; };
 		20EBB73E1DF18B03DA44797F /* Metal.framework */ = {isa = PBXBuildFile; fileRef = 60EF2F543B80E3449028C218; settings = { ATTRIBUTES = (Weak, ); }; };
 		21B63554F028D4FEEFEE6966 /* include_juce_gui_basics.mm */ = {isa = PBXBuildFile; fileRef = D93F47E71FD063107BFBECBC; };
+		23FB0676BB624D3B35201EF3 /* include_juce_audio_plugin_client_AU_1.mm */ = {isa = PBXBuildFile; fileRef = 08D5F176E0CEE6236AEE4BBB; };
 		25B65BD01FA907D299BC399D /* include_juce_events.mm */ = {isa = PBXBuildFile; fileRef = 04596BE5843CA006F6061261; };
 		2C158079B51CD44E3E50407F /* Foundation.framework */ = {isa = PBXBuildFile; fileRef = 81BEEE336C21BBA344E5EB71; };
 		30FA68B151F6FD82C87A1588 /* include_juce_audio_basics.mm */ = {isa = PBXBuildFile; fileRef = EC9F2880A0C0F7A60B34D769; };
+		31A1BD12166DE44A3E525BCB /* WebKit.framework */ = {isa = PBXBuildFile; fileRef = 3DF547A7D50A4F0CFC60CE9A; };
+		31DEF41B445746829DACABC1 /* include_juce_audio_processors_ara.cpp */ = {isa = PBXBuildFile; fileRef = D44E2C94DD52AFCC1435273D; };
 		381EBDB34BC413D6F6CC8C80 /* Standalone Plugin */ = {isa = PBXBuildFile; fileRef = EEF0D942BEBFD45565017384; };
 		4C7B681A2AAB8922F26462D6 /* MetalKit.framework */ = {isa = PBXBuildFile; fileRef = 7F4BC9B04C145C25CC020996; settings = { ATTRIBUTES = (Weak, ); }; };
 		4D80ED5C7104BCB11A5E7281 /* include_juce_audio_devices.mm */ = {isa = PBXBuildFile; fileRef = 026EE9ABE308B40E0A5008F6; };
+		5DD1864D8D3F4F8163B33C07 /* MidiRouter.cpp */ = {isa = PBXBuildFile; fileRef = 513A2BD7D3801EF1DBD1B8EB; };
 		605551760163DED8A1BF86B1 /* CoreAudioKit.framework */ = {isa = PBXBuildFile; fileRef = 662632F8CBB0226816FD4E2B; };
+		67902C804A1F78A9109A91C9 /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXBuildFile; fileRef = FE442C27F12CF3151BD473DD; };
+		6A1106798DE1AE650DD70D92 /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXBuildFile; fileRef = 235D01C6404655C63C488A8B; };
 		76ABE2CA540D052FAD72EB5C /* PluginEditor.cpp */ = {isa = PBXBuildFile; fileRef = AEE3CFA9E8F3FED851B03316; };
 		823041C4498CF179EF1CEAE5 /* VST3 Manifest Helper */ = {isa = PBXBuildFile; fileRef = 9D8E6C6B1489CA54D5A08E0C; };
 		87F0402C457B6444272FAACB /* Cocoa.framework */ = {isa = PBXBuildFile; fileRef = ED0ACCA01CE171887A9634D1; };
 		87F5865CB222A14721E8E411 /* Security.framework */ = {isa = PBXBuildFile; fileRef = 10B619CD84626291032E5648; };
 		9415EDE643C31CDBF164F452 /* AudioToolbox.framework */ = {isa = PBXBuildFile; fileRef = F404ABEBAC20E0097FE0FA25; };
 		942AE0F5E0B98A8DD790156A /* include_juce_graphics.mm */ = {isa = PBXBuildFile; fileRef = 61918735B5807D26AAD8BE19; };
+		99B9C386D7BC4CFFCA7EF33A /* include_juce_audio_formats.mm */ = {isa = PBXBuildFile; fileRef = B1C4DE1875BF008A4A375265; };
+		9B7A4A13746A3BC9206A3D8D /* include_juce_audio_plugin_client_AU_2.mm */ = {isa = PBXBuildFile; fileRef = F8FC5BC23E7C4EE3BC3BDC01; };
 		A93B2358A59B664B5C6BABC6 /* AudioUnit.framework */ = {isa = PBXBuildFile; fileRef = 7D6AABFEF68EB98062ED5BC7; };
 		AA6E7E452188AEA933C7C8EE /* QuartzCore.framework */ = {isa = PBXBuildFile; fileRef = F9B23CDDCDC8C7C2B218AE4A; };
+		ACDE53855AD969347781427B /* include_juce_gui_extra.mm */ = {isa = PBXBuildFile; fileRef = C013ADE312E4A3FB6F756EE3; };
 		ADA7BFC3B1A6A273AAC3B029 /* AU */ = {isa = PBXBuildFile; fileRef = 0ADE0D05F3776D0E753BCDE4; };
+		B26A561B5464D25FF91D5602 /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXBuildFile; fileRef = DA3D07409E5C50A079781B32; };
+		B72C232B285327D880AA678E /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXBuildFile; fileRef = BDBD247731D6A79975FF766D; };
 		C409EAACF162F0D178DC1F28 /* CoreMIDI.framework */ = {isa = PBXBuildFile; fileRef = 44FB5DE4436658311091CBA9; };
 		C7E86C92B9B67C546549713C /* CoreAudio.framework */ = {isa = PBXBuildFile; fileRef = 8B54FB4B6E03E4F5688EB3BB; };
+		D0E7A1F0D6963B1C841A2C9D /* DiscRecording.framework */ = {isa = PBXBuildFile; fileRef = 4EF9B5125EBF36B70D581B21; };
 		D881CF1097C0DEC56AB65969 /* include_juce_core.mm */ = {isa = PBXBuildFile; fileRef = 9B365D49AA9E28861DB53AEF; };
 		E275402600276B504413F2D8 /* PluginProcessor.cpp */ = {isa = PBXBuildFile; fileRef = F8E887769F6D78E88D9118FA; };
 		E55196CE2291ABD31B18E4B3 /* IOKit.framework */ = {isa = PBXBuildFile; fileRef = 6E59D1A30C98BAEB6FE59B2C; };
 		EBF46892EA96AC97E6E5D50D /* RecentFilesMenuTemplate.nib */ = {isa = PBXBuildFile; fileRef = 5B577FE36D8FBD50EE822160; };
 		ED5E7A373B06901C20A6FB4E /* VST3 */ = {isa = PBXBuildFile; fileRef = F8EC83A1246CCE36CFFE1490; };
+		F71C33BE3F2D76A1E26FE91E /* include_juce_audio_utils.mm */ = {isa = PBXBuildFile; fileRef = 47CE9DC065C5175929C8D10D; };
+		F8D41E4CD8197CB294715480 /* juce_VST3ManifestHelper.mm */ = {isa = PBXBuildFile; fileRef = 2C04052E12010EAC09DD911B; settings = { COMPILER_FLAGS = "-fobjc-arc -w -DJUCE_SKIP_PRECOMPILED_HEADER"; }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		026EE9ABE308B40E0A5008F6 /* include_juce_audio_devices.mm */ /* include_juce_audio_devices.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_devices.mm; path = ../../JuceLibraryCode/include_juce_audio_devices.mm; sourceTree = SOURCE_ROOT; };
 		04596BE5843CA006F6061261 /* include_juce_events.mm */ /* include_juce_events.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_events.mm; path = ../../JuceLibraryCode/include_juce_events.mm; sourceTree = SOURCE_ROOT; };
+		08D5F176E0CEE6236AEE4BBB /* include_juce_audio_plugin_client_AU_1.mm */ /* include_juce_audio_plugin_client_AU_1.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AU_1.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AU_1.mm; sourceTree = SOURCE_ROOT; };
 		0ADE0D05F3776D0E753BCDE4 /* AU */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CinemixAutomationBridge.component; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D4C08346D290D58BDE05394 /* juce_audio_formats */ /* juce_audio_formats */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_formats; path = ../../../../../../../usr/share/juce/modules/juce_audio_formats; sourceTree = SOURCE_ROOT; };
 		0E1BD92F99E13DE804BFE0DE /* juce_audio_basics */ /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = ../../../../../../../usr/share/juce/modules/juce_audio_basics; sourceTree = SOURCE_ROOT; };
 		10B619CD84626291032E5648 /* Security.framework */ /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		17AE8B15F9F6823D9C829062 /* juce_events */ /* juce_events */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_events; path = ../../../../../../../usr/share/juce/modules/juce_events; sourceTree = SOURCE_ROOT; };
 		1C664A962CBC9B968EC69D80 /* Info-AU.plist */ /* Info-AU.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-AU.plist"; path = "Info-AU.plist"; sourceTree = SOURCE_ROOT; };
+		235D01C6404655C63C488A8B /* include_juce_audio_plugin_client_Standalone.cpp */ /* include_juce_audio_plugin_client_Standalone.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_plugin_client_Standalone.cpp; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_Standalone.cpp; sourceTree = SOURCE_ROOT; };
+		2C04052E12010EAC09DD911B /* juce_VST3ManifestHelper.mm */ /* juce_VST3ManifestHelper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = juce_VST3ManifestHelper.mm; path = ../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.mm; sourceTree = SOURCE_ROOT; };
+		30724192EF56B77014DEBC0F /* include_juce_audio_processors.mm */ /* include_juce_audio_processors.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors.mm; path = ../../JuceLibraryCode/include_juce_audio_processors.mm; sourceTree = SOURCE_ROOT; };
 		3C3BD4E9E2DD0A9E97CB8F1A /* juce_gui_basics */ /* juce_gui_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_basics; path = ../../../../../../../usr/share/juce/modules/juce_gui_basics; sourceTree = SOURCE_ROOT; };
+		3DF547A7D50A4F0CFC60CE9A /* WebKit.framework */ /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		3FECC64529F39F33C957C96A /* JucePluginDefines.h */ /* JucePluginDefines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JucePluginDefines.h; path = ../../JuceLibraryCode/JucePluginDefines.h; sourceTree = SOURCE_ROOT; };
 		44FB5DE4436658311091CBA9 /* CoreMIDI.framework */ /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		47545E2C0B17935FF997C60D /* PluginEditor.h */ /* PluginEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginEditor.h; path = ../../Source/PluginEditor.h; sourceTree = SOURCE_ROOT; };
+		47CE9DC065C5175929C8D10D /* include_juce_audio_utils.mm */ /* include_juce_audio_utils.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_utils.mm; path = ../../JuceLibraryCode/include_juce_audio_utils.mm; sourceTree = SOURCE_ROOT; };
 		4D032291D06A4EF8CB02F3EE /* PluginProcessor.h */ /* PluginProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PluginProcessor.h; path = ../../Source/PluginProcessor.h; sourceTree = SOURCE_ROOT; };
+		4EF9B5125EBF36B70D581B21 /* DiscRecording.framework */ /* DiscRecording.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
+		513A2BD7D3801EF1DBD1B8EB /* MidiRouter.cpp */ /* MidiRouter.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MidiRouter.cpp; path = ../../Source/MidiRouter.cpp; sourceTree = SOURCE_ROOT; };
 		5B577FE36D8FBD50EE822160 /* RecentFilesMenuTemplate.nib */ /* RecentFilesMenuTemplate.nib */ = {isa = PBXFileReference; lastKnownFileType = file.nib; name = RecentFilesMenuTemplate.nib; path = RecentFilesMenuTemplate.nib; sourceTree = SOURCE_ROOT; };
 		5C325D76F755E26F624E0717 /* Shared Code */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCinemixAutomationBridge.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		60EF2F543B80E3449028C218 /* Metal.framework */ /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -77,6 +101,7 @@
 		6E59D1A30C98BAEB6FE59B2C /* IOKit.framework */ /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		7D6AABFEF68EB98062ED5BC7 /* AudioUnit.framework */ /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		7F4BC9B04C145C25CC020996 /* MetalKit.framework */ /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		80E3C7E4AEBFCD749F310EB4 /* MidiRouter.h */ /* MidiRouter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MidiRouter.h; path = ../../Source/MidiRouter.h; sourceTree = SOURCE_ROOT; };
 		80E97FA906885970D8CF87D3 /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = ../../../../../../../usr/share/juce/modules/juce_audio_devices; sourceTree = SOURCE_ROOT; };
 		81BEEE336C21BBA344E5EB71 /* Foundation.framework */ /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		8393D9AF4800ACEAE8AA8CE3 /* Info-Standalone_Plugin.plist */ /* Info-Standalone_Plugin.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-Standalone_Plugin.plist"; path = "Info-Standalone_Plugin.plist"; sourceTree = SOURCE_ROOT; };
@@ -85,12 +110,20 @@
 		9B365D49AA9E28861DB53AEF /* include_juce_core.mm */ /* include_juce_core.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_core.mm; path = ../../JuceLibraryCode/include_juce_core.mm; sourceTree = SOURCE_ROOT; };
 		9D8E6C6B1489CA54D5A08E0C /* VST3 Manifest Helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = juce_vst3_helper; sourceTree = BUILT_PRODUCTS_DIR; };
 		9EF72F92CB9BD2CF8D88EE78 /* juce_data_structures */ /* juce_data_structures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_data_structures; path = ../../../../../../../usr/share/juce/modules/juce_data_structures; sourceTree = SOURCE_ROOT; };
+		A617C25406B2FAC15A790F33 /* juce_audio_plugin_client */ /* juce_audio_plugin_client */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_plugin_client; path = ../../../../../../../usr/share/juce/modules/juce_audio_plugin_client; sourceTree = SOURCE_ROOT; };
 		A8E59AA13D97DF3006FB8B03 /* JuceHeader.h */ /* JuceHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = JuceHeader.h; path = ../../JuceLibraryCode/JuceHeader.h; sourceTree = SOURCE_ROOT; };
 		AEE3CFA9E8F3FED851B03316 /* PluginEditor.cpp */ /* PluginEditor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginEditor.cpp; path = ../../Source/PluginEditor.cpp; sourceTree = SOURCE_ROOT; };
+		B1C4DE1875BF008A4A375265 /* include_juce_audio_formats.mm */ /* include_juce_audio_formats.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_formats.mm; path = ../../JuceLibraryCode/include_juce_audio_formats.mm; sourceTree = SOURCE_ROOT; };
+		BDBD247731D6A79975FF766D /* include_juce_audio_plugin_client_ARA.cpp */ /* include_juce_audio_plugin_client_ARA.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_plugin_client_ARA.cpp; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_ARA.cpp; sourceTree = SOURCE_ROOT; };
+		C013ADE312E4A3FB6F756EE3 /* include_juce_gui_extra.mm */ /* include_juce_gui_extra.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_extra.mm; path = ../../JuceLibraryCode/include_juce_gui_extra.mm; sourceTree = SOURCE_ROOT; };
 		C0A831C36A4EE41B8DCFC7CC /* juce_graphics */ /* juce_graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_graphics; path = ../../../../../../../usr/share/juce/modules/juce_graphics; sourceTree = SOURCE_ROOT; };
+		CD77F9E165DD88A873C9CE85 /* juce_audio_utils */ /* juce_audio_utils */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_utils; path = ../../../../../../../usr/share/juce/modules/juce_audio_utils; sourceTree = SOURCE_ROOT; };
+		D44E2C94DD52AFCC1435273D /* include_juce_audio_processors_ara.cpp */ /* include_juce_audio_processors_ara.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_ara.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_ara.cpp; sourceTree = SOURCE_ROOT; };
 		D93F47E71FD063107BFBECBC /* include_juce_gui_basics.mm */ /* include_juce_gui_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_gui_basics.mm; path = ../../JuceLibraryCode/include_juce_gui_basics.mm; sourceTree = SOURCE_ROOT; };
+		DA3D07409E5C50A079781B32 /* include_juce_audio_plugin_client_VST3.mm */ /* include_juce_audio_plugin_client_VST3.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_VST3.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_VST3.mm; sourceTree = SOURCE_ROOT; };
 		DB5CCF2DE376F1738CBFBD54 /* Accelerate.framework */ /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		E17BC378E26CA13B65A582DB /* include_juce_data_structures.mm */ /* include_juce_data_structures.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_data_structures.mm; path = ../../JuceLibraryCode/include_juce_data_structures.mm; sourceTree = SOURCE_ROOT; };
+		E3A16A2C0BAF26EF690C561B /* juce_gui_extra */ /* juce_gui_extra */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_extra; path = ../../../../../../../usr/share/juce/modules/juce_gui_extra; sourceTree = SOURCE_ROOT; };
 		E6DD8F1E568C86056DEB3218 /* Info-VST3.plist */ /* Info-VST3.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info-VST3.plist"; path = "Info-VST3.plist"; sourceTree = SOURCE_ROOT; };
 		EC9F2880A0C0F7A60B34D769 /* include_juce_audio_basics.mm */ /* include_juce_audio_basics.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_basics.mm; path = ../../JuceLibraryCode/include_juce_audio_basics.mm; sourceTree = SOURCE_ROOT; };
 		ED0ACCA01CE171887A9634D1 /* Cocoa.framework */ /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -98,7 +131,10 @@
 		F404ABEBAC20E0097FE0FA25 /* AudioToolbox.framework */ /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		F8E887769F6D78E88D9118FA /* PluginProcessor.cpp */ /* PluginProcessor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginProcessor.cpp; path = ../../Source/PluginProcessor.cpp; sourceTree = SOURCE_ROOT; };
 		F8EC83A1246CCE36CFFE1490 /* VST3 */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CinemixAutomationBridge.vst3; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8FC5BC23E7C4EE3BC3BDC01 /* include_juce_audio_plugin_client_AU_2.mm */ /* include_juce_audio_plugin_client_AU_2.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_plugin_client_AU_2.mm; path = ../../JuceLibraryCode/include_juce_audio_plugin_client_AU_2.mm; sourceTree = SOURCE_ROOT; };
 		F9B23CDDCDC8C7C2B218AE4A /* QuartzCore.framework */ /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		FE2A335CF351943CE0F5066B /* juce_audio_processors */ /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = ../../../../../../../usr/share/juce/modules/juce_audio_processors; sourceTree = SOURCE_ROOT; };
+		FE442C27F12CF3151BD473DD /* include_juce_audio_processors_lv2_libs.cpp */ /* include_juce_audio_processors_lv2_libs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = include_juce_audio_processors_lv2_libs.cpp; path = ../../JuceLibraryCode/include_juce_audio_processors_lv2_libs.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,11 +146,14 @@
 				9415EDE643C31CDBF164F452,
 				87F0402C457B6444272FAACB,
 				C7E86C92B9B67C546549713C,
+				605551760163DED8A1BF86B1,
 				C409EAACF162F0D178DC1F28,
+				D0E7A1F0D6963B1C841A2C9D,
 				2C158079B51CD44E3E50407F,
 				E55196CE2291ABD31B18E4B3,
 				AA6E7E452188AEA933C7C8EE,
 				87F5865CB222A14721E8E411,
+				31A1BD12166DE44A3E525BCB,
 				20EBB73E1DF18B03DA44797F,
 				4C7B681A2AAB8922F26462D6,
 			);
@@ -128,11 +167,14 @@
 				9415EDE643C31CDBF164F452,
 				87F0402C457B6444272FAACB,
 				C7E86C92B9B67C546549713C,
+				605551760163DED8A1BF86B1,
 				C409EAACF162F0D178DC1F28,
+				D0E7A1F0D6963B1C841A2C9D,
 				2C158079B51CD44E3E50407F,
 				E55196CE2291ABD31B18E4B3,
 				AA6E7E452188AEA933C7C8EE,
 				87F5865CB222A14721E8E411,
+				31A1BD12166DE44A3E525BCB,
 				20EBB73E1DF18B03DA44797F,
 				4C7B681A2AAB8922F26462D6,
 			);
@@ -149,10 +191,12 @@
 				C7E86C92B9B67C546549713C,
 				605551760163DED8A1BF86B1,
 				C409EAACF162F0D178DC1F28,
+				D0E7A1F0D6963B1C841A2C9D,
 				2C158079B51CD44E3E50407F,
 				E55196CE2291ABD31B18E4B3,
 				AA6E7E452188AEA933C7C8EE,
 				87F5865CB222A14721E8E411,
+				31A1BD12166DE44A3E525BCB,
 				20EBB73E1DF18B03DA44797F,
 				4C7B681A2AAB8922F26462D6,
 			);
@@ -166,11 +210,14 @@
 				9415EDE643C31CDBF164F452,
 				87F0402C457B6444272FAACB,
 				C7E86C92B9B67C546549713C,
+				605551760163DED8A1BF86B1,
 				C409EAACF162F0D178DC1F28,
+				D0E7A1F0D6963B1C841A2C9D,
 				2C158079B51CD44E3E50407F,
 				E55196CE2291ABD31B18E4B3,
 				AA6E7E452188AEA933C7C8EE,
 				87F5865CB222A14721E8E411,
+				31A1BD12166DE44A3E525BCB,
 				20EBB73E1DF18B03DA44797F,
 				4C7B681A2AAB8922F26462D6,
 			);
@@ -201,10 +248,12 @@
 				8B54FB4B6E03E4F5688EB3BB,
 				662632F8CBB0226816FD4E2B,
 				44FB5DE4436658311091CBA9,
+				4EF9B5125EBF36B70D581B21,
 				81BEEE336C21BBA344E5EB71,
 				6E59D1A30C98BAEB6FE59B2C,
 				F9B23CDDCDC8C7C2B218AE4A,
 				10B619CD84626291032E5648,
+				3DF547A7D50A4F0CFC60CE9A,
 				60EF2F543B80E3449028C218,
 				7F4BC9B04C145C25CC020996,
 			);
@@ -224,11 +273,16 @@
 			children = (
 				0E1BD92F99E13DE804BFE0DE,
 				80E97FA906885970D8CF87D3,
+				0D4C08346D290D58BDE05394,
+				A617C25406B2FAC15A790F33,
+				FE2A335CF351943CE0F5066B,
+				CD77F9E165DD88A873C9CE85,
 				97AB07FE79B063DFD2B2DE7A,
 				9EF72F92CB9BD2CF8D88EE78,
 				17AE8B15F9F6823D9C829062,
 				C0A831C36A4EE41B8DCFC7CC,
 				3C3BD4E9E2DD0A9E97CB8F1A,
+				E3A16A2C0BAF26EF690C561B,
 			);
 			name = "JUCE Modules";
 			sourceTree = "<group>";
@@ -250,11 +304,22 @@
 			children = (
 				EC9F2880A0C0F7A60B34D769,
 				026EE9ABE308B40E0A5008F6,
+				B1C4DE1875BF008A4A375265,
+				BDBD247731D6A79975FF766D,
+				08D5F176E0CEE6236AEE4BBB,
+				F8FC5BC23E7C4EE3BC3BDC01,
+				235D01C6404655C63C488A8B,
+				DA3D07409E5C50A079781B32,
+				30724192EF56B77014DEBC0F,
+				D44E2C94DD52AFCC1435273D,
+				FE442C27F12CF3151BD473DD,
+				47CE9DC065C5175929C8D10D,
 				9B365D49AA9E28861DB53AEF,
 				E17BC378E26CA13B65A582DB,
 				04596BE5843CA006F6061261,
 				61918735B5807D26AAD8BE19,
 				D93F47E71FD063107BFBECBC,
+				C013ADE312E4A3FB6F756EE3,
 				A8E59AA13D97DF3006FB8B03,
 				3FECC64529F39F33C957C96A,
 			);
@@ -281,6 +346,8 @@
 				4D032291D06A4EF8CB02F3EE,
 				AEE3CFA9E8F3FED851B03316,
 				47545E2C0B17935FF997C60D,
+				513A2BD7D3801EF1DBD1B8EB,
+				80E3C7E4AEBFCD749F310EB4,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -385,7 +452,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1340;
-				ORGANIZATIONNAME = "";
+				ORGANIZATIONNAME = "GSi";
 				TargetAttributes = {
 					1114B782A4BE07C594292F75 = {
 						SystemCapabilities = {
@@ -610,6 +677,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23FB0676BB624D3B35201EF3,
+				9B7A4A13746A3BC9206A3D8D,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -617,6 +686,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B26A561B5464D25FF91D5602,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -624,6 +694,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8D41E4CD8197CB294715480,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -633,13 +704,21 @@
 			files = (
 				E275402600276B504413F2D8,
 				76ABE2CA540D052FAD72EB5C,
+				5DD1864D8D3F4F8163B33C07,
 				30FA68B151F6FD82C87A1588,
 				4D80ED5C7104BCB11A5E7281,
+				99B9C386D7BC4CFFCA7EF33A,
+				B72C232B285327D880AA678E,
+				0B2C9D49344144242DD80FEC,
+				31DEF41B445746829DACABC1,
+				67902C804A1F78A9109A91C9,
+				F71C33BE3F2D76A1E26FE91E,
 				D881CF1097C0DEC56AB65969,
 				0C2A4FB8767B4D48B170384C,
 				25B65BD01FA907D299BC399D,
 				942AE0F5E0B98A8DD790156A,
 				21B63554F028D4FEEFEE6966,
+				ACDE53855AD969347781427B,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -647,6 +726,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A1106798DE1AE650DD70D92,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -695,7 +775,7 @@
 		239562697EED7BF435CCF7CA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -712,12 +792,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -729,16 +815,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -752,22 +838,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -776,17 +862,18 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-VST3_Manifest_Helper.plist;
 				INFOPLIST_PREPROCESS = NO;
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "juce_vst3_helper";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -796,7 +883,7 @@
 		4DE9D6311C94CF43513C68F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -813,12 +900,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
@@ -830,16 +923,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -853,22 +946,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -878,9 +971,10 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-VST3.plist;
@@ -888,9 +982,9 @@
 				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/VST3/";
 				LIBRARY_STYLE = Bundle;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lCinemixAutomationBridge";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -909,7 +1003,7 @@
 		58BE038096112CC974B576CA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -926,12 +1020,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -943,16 +1043,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -966,22 +1066,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -990,17 +1090,18 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
 				INFOPLIST_PREPROCESS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lCinemixAutomationBridge";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -1010,7 +1111,7 @@
 		69BC8EEF24B50DF2D48F76A4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1027,12 +1128,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -1044,16 +1151,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1067,22 +1174,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1092,9 +1199,10 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-AU.plist;
@@ -1103,10 +1211,10 @@
 				LIBRARY_STYLE = Bundle;
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lCinemixAutomationBridge";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -1166,7 +1274,7 @@
 		7BE2F795853434372D0DE52D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1183,12 +1291,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -1200,16 +1314,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1223,22 +1337,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1247,18 +1361,19 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-Standalone_Plugin.plist;
 				INFOPLIST_PREPROCESS = NO;
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-lCinemixAutomationBridge";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -1268,7 +1383,7 @@
 		89CA6545B8969F5969548B63 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1285,12 +1400,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
@@ -1302,16 +1423,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1325,22 +1446,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1350,15 +1471,16 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -1417,7 +1539,7 @@
 		B2124519D47C15E3C89B2475 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1434,12 +1556,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
@@ -1451,16 +1579,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1474,22 +1602,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1499,16 +1627,17 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				SKIP_INSTALL = YES;
 				USE_HEADERMAP = NO;
@@ -1519,7 +1648,7 @@
 		BAA8171F11C15A22C9BABD21 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1536,12 +1665,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -1553,16 +1688,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1576,22 +1711,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1601,9 +1736,10 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-AU.plist;
@@ -1611,10 +1747,10 @@
 				INSTALL_PATH = "$(HOME)/Library/Audio/Plug-Ins/Components/";
 				LIBRARY_STYLE = Bundle;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lCinemixAutomationBridge";
 				OTHER_REZFLAGS = "-d ppc_$ppc -d i386_$i386 -d ppc64_$ppc64 -d x86_64_$x86_64 -d arm64_$arm64 -I /System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Versions/A/Headers -I \"$(DEVELOPER_DIR)/Extras/CoreAudio/AudioUnits/AUPublic/AUBase\" -I \"$(DEVELOPER_DIR)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AudioUnit.framework/Headers\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -1633,7 +1769,7 @@
 		CB9D6C94536CF5FB075B04B2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1650,12 +1786,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=0",
@@ -1667,16 +1809,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1690,22 +1832,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1714,16 +1856,17 @@
 				);
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-VST3_Manifest_Helper.plist;
 				INFOPLIST_PREPROCESS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "juce_vst3_helper";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";
@@ -1733,7 +1876,7 @@
 		E24D4588242203767C4A01AC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1750,12 +1893,18 @@
 					"JUCE_PROJUCER_VERSION=0x7000c",
 					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
 					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_plugin_client=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
 					"JUCE_MODULE_AVAILABLE_juce_core=1",
 					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
 					"JUCE_MODULE_AVAILABLE_juce_events=1",
 					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
 					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
 					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_VST3_CAN_REPLACE_VST2=0",
 					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
 					"JucePlugin_Build_VST=0",
 					"JucePlugin_Build_VST3=1",
@@ -1767,16 +1916,16 @@
 					"JucePlugin_Build_LV2=0",
 					"JucePlugin_Enable_IAA=0",
 					"JucePlugin_Enable_ARA=0",
-					"JucePlugin_Name=\\\"CinemixAutomationBridge\\\"",
+					"JucePlugin_Name=\\\"Cinemix\\ Bridge\\\"",
 					"JucePlugin_Desc=\\\"CinemixAutomationBridge\\\"",
-					"JucePlugin_Manufacturer=\\\"DaCodingChick\\\"",
-					"JucePlugin_ManufacturerWebsite=\\\"www.yourcompany.com\\\"",
+					"JucePlugin_Manufacturer=\\\"GSi\\\"",
+					"JucePlugin_ManufacturerWebsite=\\\"www.GSi.com\\\"",
 					"JucePlugin_ManufacturerEmail=\\\"\\\"",
-					"JucePlugin_ManufacturerCode=0x4b756b75",
-					"JucePlugin_PluginCode=0x4a66366a",
+					"JucePlugin_ManufacturerCode=0x47536920",
+					"JucePlugin_PluginCode=0x436d7862",
 					"JucePlugin_IsSynth=1",
-					"JucePlugin_WantsMidiInput=0",
-					"JucePlugin_ProducesMidiOutput=0",
+					"JucePlugin_WantsMidiInput=1",
+					"JucePlugin_ProducesMidiOutput=1",
 					"JucePlugin_IsMidiEffect=0",
 					"JucePlugin_EditorRequiresKeyboardFocus=0",
 					"JucePlugin_Version=1.0.0",
@@ -1790,22 +1939,22 @@
 					"JucePlugin_AUExportPrefix=CinemixAutomationBridgeAU",
 					"JucePlugin_AUExportPrefixQuoted=\\\"CinemixAutomationBridgeAU\\\"",
 					"JucePlugin_AUManufacturerCode=JucePlugin_ManufacturerCode",
-					"JucePlugin_CFBundleIdentifier=com.yourcompany.CinemixAutomationBridge",
-					"JucePlugin_AAXIdentifier=com.yourcompany.CinemixAutomationBridge",
+					"JucePlugin_CFBundleIdentifier=com.GSi.CinemixAutomationBridge",
+					"JucePlugin_AAXIdentifier=com.GSi.CinemixAutomationBridge",
 					"JucePlugin_AAXManufacturerCode=JucePlugin_ManufacturerCode",
 					"JucePlugin_AAXProductId=JucePlugin_PluginCode",
 					"JucePlugin_AAXCategory=2048",
 					"JucePlugin_AAXDisableBypass=0",
 					"JucePlugin_AAXDisableMultiMono=0",
-					"JucePlugin_IAAType=0x61757267",
+					"JucePlugin_IAAType=0x61757269",
 					"JucePlugin_IAASubType=JucePlugin_PluginCode",
-					"JucePlugin_IAAName=\\\"DaCodingChick:\\ CinemixAutomationBridge\\\"",
+					"JucePlugin_IAAName=\\\"GSi:\\ Cinemix\\ Bridge\\\"",
 					"JucePlugin_VSTNumMidiInputs=16",
 					"JucePlugin_VSTNumMidiOutputs=16",
 					"JucePlugin_ARAContentTypes=0",
 					"JucePlugin_ARATransformationFlags=0",
-					"JucePlugin_ARAFactoryID=\\\"com.yourcompany.CinemixAutomationBridge.factory\\\"",
-					"JucePlugin_ARADocumentArchiveID=\\\"com.yourcompany.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
+					"JucePlugin_ARAFactoryID=\\\"com.GSi.CinemixAutomationBridge.factory\\\"",
+					"JucePlugin_ARADocumentArchiveID=\\\"com.GSi.CinemixAutomationBridge.aradocumentarchive.1.0.0\\\"",
 					"JucePlugin_ARACompatibleArchiveIDs=\\\"\\\"",
 					"JUCE_STANDALONE_APPLICATION=JucePlugin_Build_Standalone",
 					"JUCER_XCODE_MAC_F6D2F4CF=1",
@@ -1815,9 +1964,10 @@
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK",
 					"$(SRCROOT)/../../JuceLibraryCode",
 					"$(SRCROOT)/../../../../../../../usr/share/juce/modules",
+					"$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Info-VST3.plist;
@@ -1826,9 +1976,9 @@
 				LIBRARY_STYLE = Bundle;
 				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MTL_HEADER_SEARCH_PATHS = "/usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_processors/format_types/VST3_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../../../../../../usr/share/juce/modules $(SRCROOT)/../../../../../../../usr/share/juce/modules/juce_audio_plugin_client/AU";
 				OTHER_LDFLAGS = "-bundle -lCinemixAutomationBridge";
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.CinemixAutomationBridge;
+				PRODUCT_BUNDLE_IDENTIFIER = com.GSi.CinemixAutomationBridge;
 				PRODUCT_NAME = "CinemixAutomationBridge";
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "arm64 arm64e i386 x86_64";

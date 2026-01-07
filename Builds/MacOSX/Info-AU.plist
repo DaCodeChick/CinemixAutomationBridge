@@ -8,7 +8,7 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourcompany.CinemixAutomationBridge</string>
+    <string>com.GSi.CinemixAutomationBridge</string>
     <key>CFBundleName</key>
     <string>CinemixAutomationBridge</string>
     <key>CFBundleDisplayName</key>
@@ -22,7 +22,7 @@
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>NSHumanReadableCopyright</key>
-    <string></string>
+    <string>MIT License</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSApplicationCategoryType</key>
@@ -31,17 +31,17 @@
     <array>
       <dict>
         <key>name</key>
-        <string>DaCodingChick: CinemixAutomationBridge</string>
+        <string>GSi: Cinemix Bridge</string>
         <key>description</key>
         <string>CinemixAutomationBridge</string>
         <key>factoryFunction</key>
         <string>CinemixAutomationBridgeAUFactory</string>
         <key>manufacturer</key>
-        <string>Kuku</string>
+        <string>GSi </string>
         <key>type</key>
         <string>aumu</string>
         <key>subtype</key>
-        <string>Jf6j</string>
+        <string>Cmxb</string>
         <key>version</key>
         <integer>65536</integer>
         <key>resourceUsage</key>

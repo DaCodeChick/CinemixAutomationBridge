@@ -33,4 +33,6 @@
 
 # Visual Studio
 .vs/
+Builds/LinuxMakefile/build/
+Builds/LinuxMakefile/pre_build/
 Builds/VisualStudio2022/x64/

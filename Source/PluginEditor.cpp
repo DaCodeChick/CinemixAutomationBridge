@@ -1,7 +1,13 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin editor.
+    CinemixAutomationBridge - PluginEditor.cpp
+    JUCE-based replication of D&R Cinemix VST Automation Bridge
+    
+    Copyright (c) 2012 Guido Scognamiglio (original VST 2.4 version)
+    Copyright (c) 2026 (JUCE 8.0.12 replication)
+    
+    MIT License - See LICENSE file for details
 
   ==============================================================================
 */
@@ -10,31 +16,62 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-CinemixAutomationBridgeAudioProcessorEditor::CinemixAutomationBridgeAudioProcessorEditor (CinemixAutomationBridgeAudioProcessor& p)
+CinemixBridgeEditor::CinemixBridgeEditor (CinemixBridgeProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    // Set fixed window size (as per PLAN.md)
+    setSize (920, 560);
+    
+    // Setup title label
+    addAndMakeVisible(titleLabel);
+    titleLabel.setText("CinemixAutomationBridge", juce::dontSendNotification);
+    titleLabel.setFont(juce::Font(32.0f, juce::Font::bold));
+    titleLabel.setJustificationType(juce::Justification::centred);
+    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    
+    // Setup status label
+    addAndMakeVisible(statusLabel);
+    statusLabel.setText("Phase 1: Basic UI - Plugin Loaded Successfully!\n\n"
+                       "161 Parameters Created:\n"
+                       "- 72 Faders (36 channels x 2 rows)\n"
+                       "- 72 Mutes (36 channels x 2 rows)\n"
+                       "- 10 AUX Mutes\n"
+                       "- 7 Master Section Parameters\n\n"
+                       "Next Phase: MIDI Infrastructure", 
+                       juce::dontSendNotification);
+    statusLabel.setFont(juce::Font(16.0f));
+    statusLabel.setJustificationType(juce::Justification::centred);
+    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
 }
 
-CinemixAutomationBridgeAudioProcessorEditor::~CinemixAutomationBridgeAudioProcessorEditor()
+CinemixBridgeEditor::~CinemixBridgeEditor()
 {
 }
 
 //==============================================================================
-void CinemixAutomationBridgeAudioProcessorEditor::paint (juce::Graphics& g)
+void CinemixBridgeEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::FontOptions (15.0f));
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
+    // Background gradient
+    g.fillAll(juce::Colour(0xff2a2a2a));
+    
+    juce::ColourGradient gradient(juce::Colour(0xff3a3a3a), 0, 0,
+                                   juce::Colour(0xff1a1a1a), 0, (float)getHeight(),
+                                   false);
+    g.setGradientFill(gradient);
+    g.fillRect(getLocalBounds());
+    
+    // Draw border
+    g.setColour(juce::Colours::darkgrey);
+    g.drawRect(getLocalBounds(), 2);
 }
 
-void CinemixAutomationBridgeAudioProcessorEditor::resized()
+void CinemixBridgeEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+    auto bounds = getLocalBounds();
+    
+    // Title at top
+    titleLabel.setBounds(bounds.removeFromTop(100).reduced(20, 20));
+    
+    // Status label in center
+    statusLabel.setBounds(bounds.reduced(40));
 }
