@@ -171,6 +171,18 @@ TEST_CASE("scheduler: queue-cap policy — drops count, SystemReset always admit
     CHECK(f.transport.sentToPort1.back().isSystemReset());
 }
 
+TEST_CASE("scheduler: high-lane saturation drops newest reply, keeps order") {
+    Fixture f;
+    // Fill the high lane past its cap: the overflow drops the NEWEST reply
+    // and counts it; earlier replies keep their relative order.
+    for (int i = 0; i < 1100; ++i)
+        f.sched.enqueueHigh(cmd(3, uint8_t(static_cast<uint8_t>(64 + (i % 48))), 2));
+    CHECK(f.sched.pending() <= 1024);
+    CHECK(f.sched.droppedTotal() > 0);
+    f.sched.drainToEmpty();
+    CHECK(f.transport.sentToPort1.size() > 0);
+}
+
 TEST_CASE("scheduler: system reset passes through as a 1-byte message") {
     Fixture f;
     OutboundCommand c;

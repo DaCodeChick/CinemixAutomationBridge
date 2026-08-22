@@ -1,11 +1,31 @@
 #include "cinemix/TransmissionScheduler.h"
 
 #include <algorithm>
-#include <cstdio>
 
 namespace cinemix {
 
 namespace {
+
+// Direct string construction for TX diagnostics: no fixed buffer, no
+// truncation (brief §25).
+std::string hexByte(std::uint8_t value) {
+    constexpr char kHex[] = "0123456789ABCDEF";
+    std::string out;
+    out.push_back(kHex[(value >> 4) & 0x0F]);
+    out.push_back(kHex[value & 0x0F]);
+    return out;
+}
+
+std::string describeOutbound(const MidiMessage& message) {
+    std::string text = "TX port " + std::to_string(static_cast<unsigned>(message.port)) + ": ";
+    if (message.length == 1) return text + "FF";
+    for (std::uint8_t i = 0; i < message.length; ++i) {
+        if (i > 0) text.push_back(' ');
+        text += hexByte(message.data[i]);
+    }
+    return text;
+}
+
 // Small burst allowance: lets the budget absorb a brief spike (e.g. a touch
 // reply immediately after a burst) without overshooting the steady rate.
 constexpr double kMaxBurst = 8.0;
@@ -122,17 +142,7 @@ void TransmissionScheduler::sendOne(const OutboundCommand& command) {
 
     if (static_cast<std::uint8_t>(diag_.level()) >=
         static_cast<std::uint8_t>(Diagnostics::Level::MidiOut)) {
-        char buf[80];
-        if (message.length == 1)
-            snprintf(buf, sizeof(buf), "TX port %u: FF", static_cast<unsigned>(message.port));
-        else if (message.length == 2)
-            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X",
-                     static_cast<unsigned>(message.port), message.data[0], message.data[1]);
-        else
-            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X %02X",
-                     static_cast<unsigned>(message.port), message.data[0], message.data[1],
-                     message.data[2]);
-        diag_.midiOut(buf);
+        diag_.midiOut(describeOutbound(message));
     }
 }
 

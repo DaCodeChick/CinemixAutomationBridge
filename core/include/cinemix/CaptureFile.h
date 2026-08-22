@@ -47,15 +47,26 @@ struct CaptureEvent {
 
 namespace capture_detail {
 
-constexpr std::size_t kHeaderSize = 12;        // magic(8) + version(4)
-constexpr std::size_t kRecordHeaderSize = 11;  // timestamp(8) + direction(1) + port(1) + length(1)
-constexpr std::size_t kMaxRecordSize = kRecordHeaderSize + 3; // max message length
+// Layout is DERIVED from these definitions — every offset below follows
+// from the field sizes, so no consumer repeats raw layout numbers.
+constexpr std::size_t kMagicSize = 8;
+constexpr std::size_t kTimestampSize = 8;
+constexpr std::size_t kMaxMessageLength = 3;
+constexpr std::size_t kDirectionOffset = kTimestampSize;          // 8
+constexpr std::size_t kPortOffset = kDirectionOffset + 1;         // 9
+constexpr std::size_t kLengthOffset = kPortOffset + 1;            // 10
+constexpr std::size_t kPayloadOffset = kLengthOffset + 1;         // 11
+constexpr std::size_t kRecordHeaderSize = kPayloadOffset;         // 11
+constexpr std::size_t kMaxRecordSize = kRecordHeaderSize + kMaxMessageLength; // 14
 
 constexpr std::uint8_t kDirectionInbound = 0;
 constexpr std::uint8_t kDirectionOutbound = 1;
 constexpr std::uint8_t kPortBroadcast = 0;
 constexpr std::uint8_t kPortLo = 1;
 constexpr std::uint8_t kPortHi = 2;
+
+// Record payloads are 1..3 bytes per the format; zero-length records are
+// malformed (there is nothing to represent them).
 
 // A fully encoded record, header included.
 struct EncodedRecord {
@@ -123,7 +134,10 @@ public:
     // Borrowed variant (tests): the stream is owned by the caller and must
     // outlive the writer.
     explicit CaptureWriter(std::ostream& out);
-    ~CaptureWriter();
+    // Rule of Zero: the members (unique_ptr<ofstream>, reference, bool) own
+    // everything; the ofstream type is complete in this header, so the
+    // implicit destructor is correct. Copy is deleted (reference member);
+    // move construction remains available.
     CaptureWriter(const CaptureWriter&) = delete;
     CaptureWriter& operator=(const CaptureWriter&) = delete;
 
@@ -148,7 +162,7 @@ class CaptureReader {
 public:
     explicit CaptureReader(const std::string& path);
     explicit CaptureReader(std::istream& in);
-    ~CaptureReader();
+    // Rule of Zero (see CaptureWriter).
     CaptureReader(const CaptureReader&) = delete;
     CaptureReader& operator=(const CaptureReader&) = delete;
 

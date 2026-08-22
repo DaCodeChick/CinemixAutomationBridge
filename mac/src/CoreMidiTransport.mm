@@ -39,7 +39,10 @@ CoreMidiTransport::~CoreMidiTransport() {
 void CoreMidiTransport::shutdown() noexcept {
     // Idempotent, order-safe disposal of every resource that may exist at
     // any stage of initialization. Sources are disconnected before the input
-    // port is disposed; ports before the client.
+    // port is disposed; ports before the client. CoreMIDI guarantees no
+    // further read-proc invocations after the port/client dispose, so the
+    // `this` captured in the read proc cannot be called during or after
+    // shutdown (callback lifetime invariant, brief §26).
     if (inPort_ != 0) {
         if (src1_ != 0) MIDIPortDisconnectSource(inPort_, src1_);
         if (src2_ != 0) MIDIPortDisconnectSource(inPort_, src2_);

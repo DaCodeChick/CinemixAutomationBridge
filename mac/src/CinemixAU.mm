@@ -35,9 +35,17 @@ CinemixAU::CinemixAU(AudioComponentInstance ci)
     diag_->setLevel(static_cast<cinemix::Diagnostics::Level>(config::diagnosticsLevel()));
     config::installDefaultLogSink(*diag_);
 
-    transport_->start();
-    transport_->selectInputs(config::input1Name(), config::input2Name());
-    transport_->selectOutputs(config::output1Name(), config::output2Name());
+    // Transport setup is separate from AU instantiation: the plugin still
+    // loads when the console interface is missing, but the state must be
+    // explicit. On failure the transport logs the CoreMIDI error and the
+    // Cocoa view shows "no MIDI outputs selected" — never silent success.
+    if (!transport_->start()) {
+        diag_->warning("AU loaded without a working CoreMIDI transport — "
+                       "console unreachable until the MIDI interface is fixed");
+    } else {
+        transport_->selectInputs(config::input1Name(), config::input2Name());
+        transport_->selectOutputs(config::output1Name(), config::output2Name());
+    }
 
     engine_->setListener(&hostBridge_);
     engine_->start();

@@ -1,6 +1,5 @@
 #include "cinemix/ParameterMap.h"
 
-#include <cstdio>
 
 namespace cinemix {
 
@@ -63,11 +62,8 @@ ParameterMap::ParameterMap(const MixerProfile& profile) {
         info.id = static_cast<ParamId>(params_.size());
         info.control = ControlRef(ControlClass::AuxMute, 0, StripPath::Chan,
                                   static_cast<std::uint8_t>(aux));
-        char buf[16];
-        snprintf(buf, sizeof(buf), "AUX %u Mute", static_cast<unsigned>(aux + 1));
-        info.name = buf;
-        snprintf(buf, sizeof(buf), "Aux%uMut", static_cast<unsigned>(aux + 1));
-        info.shortName = buf;
+        info.name = "AUX " + std::to_string(static_cast<unsigned>(aux + 1)) + " Mute";
+        info.shortName = "Aux" + std::to_string(static_cast<unsigned>(aux + 1)) + "Mut";
         info.isMuteLike = true;
         info.defaultValue = 0.0f;
         params_.push_back(info);

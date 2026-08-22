@@ -204,10 +204,9 @@ void AutomationEngine::parserCcCallback(void* user, std::uint8_t channel, std::u
     const std::uint8_t status = static_cast<std::uint8_t>(0xB0u | ((channel - 1) & 0x0F));
     if (static_cast<std::uint8_t>(self->diag_.level()) >=
         static_cast<std::uint8_t>(Diagnostics::Level::MidiIn)) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "RX ch=%u cc=%u val=%u", static_cast<unsigned>(channel),
-                 static_cast<unsigned>(cc), static_cast<unsigned>(value));
-        self->diag_.midiIn(buf);
+        self->diag_.midiIn("RX ch=" + std::to_string(static_cast<unsigned>(channel)) +
+                            " cc=" + std::to_string(static_cast<unsigned>(cc)) +
+                            " val=" + std::to_string(static_cast<unsigned>(value)));
     }
     const ConsoleEvent event = self->protocol_.decode(status, cc, value);
     self->handleConsoleEvent(event);
@@ -235,11 +234,10 @@ void AutomationEngine::handleConsoleEvent(const ConsoleEvent& event) {
     if (event.kind == EventKind::Unknown) {
         if (static_cast<std::uint8_t>(diag_.level()) >=
             static_cast<std::uint8_t>(Diagnostics::Level::Verbose)) {
-            char buf[96];
-            snprintf(buf, sizeof(buf), "unknown console CC: ch=%u cc=%u val=%u",
-                     static_cast<unsigned>(event.channel), static_cast<unsigned>(event.cc),
-                     static_cast<unsigned>(event.value));
-            diag_.verbose(buf);
+            diag_.verbose("unknown console CC: ch=" +
+                          std::to_string(static_cast<unsigned>(event.channel)) +
+                          " cc=" + std::to_string(static_cast<unsigned>(event.cc)) +
+                          " val=" + std::to_string(static_cast<unsigned>(event.value)));
         }
         return;
     }

@@ -75,10 +75,11 @@ static const CGFloat kPanelHeight = 420;
         cinemix::Diagnostics* diag = _ctx.diag;
         CinemixCocoaView* view = self;
         diag->setSink([view](cinemix::Diagnostics::Level level, const std::string& message) {
-            char buf[512];
-            snprintf(buf, sizeof(buf), "[%s] %s", cinemix::Diagnostics::levelName(level),
-                     message.c_str());
-            [view appendLogLine:buf];
+            // Direct construction: no fixed buffer, no silent truncation —
+            // diagnostics for vintage hardware must not lose text.
+            const std::string line = std::string("[") +
+                                     cinemix::Diagnostics::levelName(level) + "] " + message;
+            [view appendLogLine:line.c_str()];
         });
         _sinkInstalled = YES;
     }
@@ -290,12 +291,17 @@ static const CGFloat kPanelHeight = 420;
         [self repopulate:_out2 withNames:outs selected:cinemix_mac::config::output2Name()];
     }
     if (_ctx.engine) {
+        // Terminology (deliberate): ACTIVE = remote-control mode has been
+        // COMMANDED to the console; it does not prove the physical mixer
+        // responded — the Log pane shows actual console traffic. "Outputs
+        // selected" = CoreMIDI destinations configured; not a claim that the
+        // console answered.
         const bool faderTestActive = _ctx.engine->testMode();
         NSString* state = _ctx.engine->isActivated()
             ? (faderTestActive ? @"ACTIVE — fader test running" : @"ACTIVE")
             : @"standby (console released)";
         NSString* conn = (_ctx.transport && _ctx.transport->connected())
-            ? @"outputs connected" : @"outputs NOT connected";
+            ? @"MIDI outputs selected" : @"no MIDI outputs selected";
         [_status setStringValue:[NSString stringWithFormat:@"%@ — %@", state, conn]];
         // Explicit operator-facing state: the toggle reads "Stop Fader Test"
         // while the oscillator drives physical motors.

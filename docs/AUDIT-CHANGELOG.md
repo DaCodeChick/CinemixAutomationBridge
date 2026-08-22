@@ -291,3 +291,81 @@ a C++ value member (RAII, ARC-safe).
 - Zero warnings under the first-party warning set.
 - macOS/AU/CoreMIDI failure paths remain IMPLEMENTED, NOT TARGET-MAC TESTED;
   nothing in this pass claims otherwise.
+
+
+---
+
+# Third Surgical Audit — Contract Closure Pass
+
+## .cmi binary-format contracts closed
+
+**Finding:** the decoder rejected length > 3 but accepted length 0 although
+the documented format says 1..3 — "Malformed" still overstated the
+validation; the record codec and reader assembled buffers with raw offsets
+(`data[8]`, `data[9]`, `header[8+i]`) and the writer assembled a synthetic
+header buffer merely to write it once.
+**Correction:** every field the format constrains is now enforced (direction
+∈ {0,1}, port ∈ {0,1,2}, payload length ∈ 1..3). All layout offsets are
+derived constants (`kTimestampSize` → `kDirectionOffset` → … → 
+`kPayloadOffset` → `kRecordHeaderSize` → `kMaxRecordSize`); no consumer
+repeats a raw layout number, and static_asserts pin them in the tests. The
+header is written directly (magic bytes, then the encoded version) — no
+synthetic assembly buffer. `encodeRecord` documents its 1..3 precondition
+(assert in debug) and `CaptureWriter::writeEvent` skips structurally invalid
+payloads without marking the writer failed (caller bug ≠ I/O failure); the
+writer can therefore never emit a record the decoder would reject.
+**Tests:** zero-length → Malformed, layout static_asserts, invalid-payload
+skip round trip, `/dev/full` failure latching, direction/port rejection,
+stringstream round trip — all passing.
+
+## Rule of Zero
+
+**Finding:** `CaptureWriter`/`CaptureReader` declared out-of-line defaulted
+destructors although every member is RAII-owned and the stream types are
+complete in the header (the user-declared destructors also suppressed
+implicit move generation without reason).
+**Correction:** destructor declarations/definitions removed; members own
+everything; copy remains deleted (reference member), moves available.
+**Tests:** unchanged behavior, full suite green.
+
+## Diagnostics formatting — no fixed buffers, no truncation
+
+**Finding:** engine/scheduler diagnostics and strip/AUX naming still flowed
+through `char buf[N]` + `snprintf` (arbitrary sizes, silent truncation risk);
+the Cocoa view converted `char buf[512]` → `std::string`.
+**Correction:** all replaced by direct `std::string` construction (small
+`hexByte` helpers for MIDI bytes). Remaining raw character buffers are
+documented C-API necessities only: `mkstemp` template (tests) and
+`CFStringGetCString` (CoreMIDI endpoint names). `std::memcpy` is fully gone
+from CaptureFile (no copies remain to make).
+
+## AU / transport / UI state contracts made explicit
+
+**Finding:** the AU constructor called `transport_->start()` ignoring the
+result; the status line said "outputs connected", overstating what endpoint
+selection proves.
+**Correction:** the AU now treats transport setup failure as an explicit
+diagnosed state (plugin loads, core runs, console unreachable — logged and
+shown, never silent). The view's terminology is precise and documented in
+code: ACTIVE = remote mode commanded (not physical proof), "MIDI outputs
+selected" = CoreMIDI destinations configured. `CoreMidiTransport::shutdown()`
+documents the callback-lifetime invariant: CoreMIDI issues no read-proc
+invocations after port/client disposal, so the `this` captured by the read
+proc cannot outlive the object.
+
+## Scheduler queue-full behavior: high-lane test
+
+**Finding:** the high-lane saturation policy (drop NEWEST reply, never
+reorder older ones) was documented but untested.
+**Correction:** regression test added (1100 replies → cap, drop counted,
+order preserved).
+
+## Verification
+
+* 87 test cases across 8 suites, all passing (Linux, gcc 16, C++14,
+  first-party warning set, zero warnings).
+* ASan/UBSan clean on every suite; ThreadSanitizer clean on the engine suite
+  (multi-producer stress, worker lifecycle, teardown cases).
+* Harness selftest, capture/replay, demo: passing.
+* Verification categories remain strict: macOS/AU/CoreMIDI/Logic/hardware
+  items are IMPLEMENTED only and explicitly marked for target validation.

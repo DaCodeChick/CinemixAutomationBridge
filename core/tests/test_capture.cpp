@@ -224,6 +224,49 @@ TEST_CASE("capture: in-memory stream round trip (borrowed-stream API)") {
     }
 }
 
+TEST_CASE("capture codec: zero-length payload is Malformed") {
+    const MidiMessage cc = MidiMessage::controlChange(1, 0, 63, 1);
+    const capture_detail::EncodedRecord encoded =
+        capture_detail::encodeRecord(makeEvent(1, 0, 0, cc));
+    std::array<std::uint8_t, capture_detail::kMaxRecordSize> bad{};
+    for (size_t i = 0; i < 11; ++i) bad[i] = encoded.bytes[i];
+    bad[10] = 0; // length 0: format requires 1..3
+    capture_detail::DecodedRecord decoded =
+        capture_detail::decodeRecord(bad.data(), capture_detail::kRecordHeaderSize);
+    CHECK(decoded.status == capture_detail::DecodeStatus::Malformed);
+}
+
+TEST_CASE("capture codec: layout constants are self-consistent") {
+    static_assert(capture_detail::kDirectionOffset == 8, "direction offset");
+    static_assert(capture_detail::kPortOffset == 9, "port offset");
+    static_assert(capture_detail::kLengthOffset == 10, "length offset");
+    static_assert(capture_detail::kPayloadOffset == 11, "payload offset");
+    static_assert(capture_detail::kRecordHeaderSize == 11, "record header size");
+    static_assert(capture_detail::kMaxRecordSize == 14, "max record size");
+    CHECK(true);
+}
+
+TEST_CASE("capture: structurally invalid payloads are skipped, not written") {
+    std::stringstream buffer(std::ios::in | std::ios::out | std::ios::binary);
+    {
+        CaptureWriter writer(buffer);
+        CHECK(writer.ok());
+        CaptureEvent bad = makeEvent(1, 1, 1, MidiMessage::controlChange(1, 0, 63, 1));
+        bad.message.length = 0; // caller bug: no format representation
+        writer.writeEvent(bad);
+        writer.writeEvent(makeEvent(2, 1, 1, MidiMessage::controlChange(1, 0, 63, 1)));
+        CHECK(writer.ok()); // skipping is not an I/O failure
+    }
+    buffer.seekg(0);
+    CaptureReader reader(buffer);
+    CHECK(reader.ok());
+    CaptureEvent event;
+    CHECK(reader.next(event));
+    CHECK_EQ(event.timestampUs, static_cast<std::uint64_t>(2)); // only the valid record
+    CHECK(!reader.next(event));
+    CHECK_EQ(reader.corruptCount(), static_cast<size_t>(0));
+}
+
 } // namespace
 
 int main(int argc, char** argv) {

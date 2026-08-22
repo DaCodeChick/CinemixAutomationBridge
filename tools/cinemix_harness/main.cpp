@@ -49,15 +49,22 @@ struct PrintListener : public AutomationEngine::Listener {
     }
 };
 
+std::string hexByte(std::uint8_t value) {
+    constexpr char kHex[] = "0123456789ABCDEF";
+    std::string out;
+    out.push_back(kHex[(value >> 4) & 0x0F]);
+    out.push_back(kHex[value & 0x0F]);
+    return out;
+}
+
 std::string describe(const MidiMessage& m) {
-    char buf[96];
-    if (m.length == 1)
-        snprintf(buf, sizeof(buf), "port%u: FF", m.port);
-    else if (m.length == 2)
-        snprintf(buf, sizeof(buf), "port%u: %02X %02X", m.port, m.data[0], m.data[1]);
-    else
-        snprintf(buf, sizeof(buf), "port%u: %02X %02X %02X", m.port, m.data[0], m.data[1], m.data[2]);
-    return buf;
+    std::string text = "port" + std::to_string(static_cast<unsigned>(m.port)) + ": ";
+    if (m.length == 1) return text + "FF";
+    for (std::uint8_t i = 0; i < m.length; ++i) {
+        if (i > 0) text.push_back(' ');
+        text += hexByte(m.data[i]);
+    }
+    return text;
 }
 
 // ---------------------------------------------------------------------------

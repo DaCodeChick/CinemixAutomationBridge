@@ -48,8 +48,8 @@ ctest --test-dir build --output-on-failure
   dirty-flag design must end in a consistent state (verified under
   ThreadSanitizer on Linux).
 * **Capture failure semantics** — write failures (via `/dev/full`) leave the
-  writer failed, never "healthy"; invalid direction/port fields are
-  Malformed; in-memory stringstream round trips; little-endian primitives
+  writer failed, never "healthy"; invalid direction/port and
+  zero-length payload fields are Malformed; in-memory stringstream round trips; little-endian primitives
   with the encoded size in the type.
 * **Scheduler queue-full policy** — over-cap commands are dropped and
   counted; SystemReset is always admitted.

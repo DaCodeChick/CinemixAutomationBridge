@@ -1,5 +1,6 @@
 #include "cinemix/CaptureFile.h"
 
+#include <cassert>
 #include <cstring>
 
 namespace cinemix {
@@ -14,15 +15,22 @@ constexpr std::uint32_t kVersion = 1;
 namespace capture_detail {
 
 EncodedRecord encodeRecord(const CaptureEvent& event) {
+    // Precondition: the message payload is 1..3 bytes (the format cannot
+    // represent other lengths — the decoder rejects them). Oversized input is
+    // defensively clamped to 3; undersized input is a caller bug.
+    assert(event.message.length >= 1);
+    const std::uint8_t length =
+        event.message.length > kMaxMessageLength ? kMaxMessageLength
+                                                 : event.message.length;
+
     EncodedRecord record;
-    const std::array<std::uint8_t, 8> timestamp = encodeU64Le(event.timestampUs);
+    const std::array<std::uint8_t, kTimestampSize> timestamp = encodeU64Le(event.timestampUs);
     for (std::size_t i = 0; i < timestamp.size(); ++i) record.bytes[i] = timestamp[i];
-    record.bytes[8] = event.direction;
-    record.bytes[9] = event.port;
-    const std::uint8_t length = event.message.length > 3 ? 3 : event.message.length;
-    record.bytes[10] = length;
+    record.bytes[kDirectionOffset] = event.direction;
+    record.bytes[kPortOffset] = event.port;
+    record.bytes[kLengthOffset] = length;
     for (std::uint8_t i = 0; i < length; ++i)
-        record.bytes[11 + i] = event.message.data[i];
+        record.bytes[kPayloadOffset + i] = event.message.data[i];
     record.length = static_cast<std::uint8_t>(kRecordHeaderSize + length);
     return record;
 }
@@ -33,14 +41,17 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept 
     result.consumed = 0;
     if (size < kRecordHeaderSize) return result;
 
-    // Complete field validation — Malformed means what it says.
-    const std::uint8_t direction = data[8];
-    const std::uint8_t port = data[9];
-    const std::uint8_t length = data[10];
+    // Complete field validation — Malformed means what it says. Every field
+    // the format constrains is enforced: direction ∈ {0,1}, port ∈ {0,1,2},
+    // payload length ∈ 1..3.
+    const std::uint8_t direction = data[kDirectionOffset];
+    const std::uint8_t port = data[kPortOffset];
+    const std::uint8_t length = data[kLengthOffset];
     const bool directionValid =
         (direction == kDirectionInbound || direction == kDirectionOutbound);
     const bool portValid = (port == kPortBroadcast || port == kPortLo || port == kPortHi);
-    if (!directionValid || !portValid || length > 3) {
+    const bool lengthValid = (length >= 1 && length <= kMaxMessageLength);
+    if (!directionValid || !portValid || !lengthValid) {
         result.status = DecodeStatus::Malformed;
         return result;
     }
@@ -55,7 +66,7 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept 
     result.event.message.port = port;
     result.event.message.data = {};
     for (std::uint8_t i = 0; i < length; ++i)
-        result.event.message.data[i] = data[11 + i];
+        result.event.message.data[i] = data[kPayloadOffset + i];
     result.consumed = kRecordHeaderSize + length;
     result.status = DecodeStatus::Ok;
     return result;
@@ -77,16 +88,13 @@ CaptureWriter::CaptureWriter(std::ostream& out)
     writeHeader();
 }
 
-CaptureWriter::~CaptureWriter() = default;
-
 void CaptureWriter::writeHeader() {
-    // Magic + version (little-endian).
-    std::array<std::uint8_t, capture_detail::kHeaderSize> header{};
-    std::memcpy(header.data(), kMagic.data(), kMagic.size());
+    // Header = magic bytes, then the little-endian version. The two parts are
+    // written directly — no synthetic assembly buffer, no raw offsets.
+    out_.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
     const std::array<std::uint8_t, 4> version = capture_detail::encodeU32Le(kVersion);
-    for (std::size_t i = 0; i < version.size(); ++i) header[8 + i] = version[i];
-    out_.write(reinterpret_cast<const char*>(header.data()),
-               static_cast<std::streamsize>(header.size()));
+    out_.write(reinterpret_cast<const char*>(version.data()),
+               static_cast<std::streamsize>(version.size()));
     // flush() is REQUIRED for correct failure semantics: a buffered stream
     // hides short writes and I/O errors until the buffer is flushed, so an
     // unwritten flush would let ok() keep reporting success.
@@ -101,6 +109,12 @@ void CaptureWriter::writeEvent(const CaptureEvent& event) {
         failed_ = true;
         return;
     }
+    // Structurally invalid payloads (0 or >3 bytes) are caller bugs and have
+    // no format representation; skip them so the writer never emits a record
+    // the decoder would reject. This is not an I/O failure: ok() stays true.
+    if (event.message.length < 1 ||
+        event.message.length > capture_detail::kMaxMessageLength)
+        return;
     const capture_detail::EncodedRecord record = capture_detail::encodeRecord(event);
     out_.write(reinterpret_cast<const char*>(record.bytes.data()),
                static_cast<std::streamsize>(record.length));
@@ -155,35 +169,45 @@ CaptureReader::CaptureReader(std::istream& in) : in_(in), corrupt_(0) {
     }
 }
 
-CaptureReader::~CaptureReader() = default;
-
 bool CaptureReader::next(CaptureEvent& out) {
     if (!in_.good()) return false;
 
     // Assemble one record; read() distinguishes clean EOF (0 bytes) from a
-    // truncated record (1..N-1 bytes) via gcount.
+    // truncated record (1..N-1 bytes) via gcount. Offsets come from the
+    // capture_detail layout constants, never raw numbers.
     std::array<std::uint8_t, capture_detail::kMaxRecordSize> buffer{};
     std::size_t got = 0;
 
-    // Timestamp (8).
-    in_.read(reinterpret_cast<char*>(buffer.data()), 8);
+    // Timestamp.
+    in_.read(reinterpret_cast<char*>(buffer.data()),
+             static_cast<std::streamsize>(capture_detail::kTimestampSize));
     const std::streamsize tsGot = in_.gcount();
     if (tsGot == 0 && in_.eof()) return false; // clean EOF
-    if (tsGot != 8) { ++corrupt_; return false; }
-    got += 8;
+    if (tsGot != static_cast<std::streamsize>(capture_detail::kTimestampSize)) {
+        ++corrupt_;
+        return false;
+    }
+    got += capture_detail::kTimestampSize;
 
-    // Record header (3).
-    in_.read(reinterpret_cast<char*>(buffer.data() + got), 3);
-    if (in_.gcount() != 3) { ++corrupt_; return false; }
-    got += 3;
+    // Direction + port + length.
+    const std::size_t fixedHeader = capture_detail::kRecordHeaderSize -
+                                    capture_detail::kTimestampSize; // 3
+    in_.read(reinterpret_cast<char*>(buffer.data() + got),
+             static_cast<std::streamsize>(fixedHeader));
+    if (in_.gcount() != static_cast<std::streamsize>(fixedHeader)) {
+        ++corrupt_;
+        return false;
+    }
+    got += fixedHeader;
 
     // Payload.
-    const std::uint8_t length = buffer[10];
-    if (length > 3) { ++corrupt_; return false; }
-    if (length > 0) {
-        in_.read(reinterpret_cast<char*>(buffer.data() + got), length);
-        if (in_.gcount() != length) { ++corrupt_; return false; }
+    const std::uint8_t length = buffer[capture_detail::kLengthOffset];
+    if (length < 1 || length > capture_detail::kMaxMessageLength) {
+        ++corrupt_;
+        return false;
     }
+    in_.read(reinterpret_cast<char*>(buffer.data() + got), length);
+    if (in_.gcount() != length) { ++corrupt_; return false; }
     got += length;
 
     // Full structural validation in the pure codec.

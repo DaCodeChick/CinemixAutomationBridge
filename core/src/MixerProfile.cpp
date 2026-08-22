@@ -10,16 +10,13 @@ std::string MixerProfile::stripLabel(std::size_t strip) const {
         std::size_t s = 0;
         for (std::size_t i = 0; i < stereoStrips.size(); ++i)
             if (stereoStrips[i] < strip) ++s;
-        char buf[16];
-        snprintf(buf, sizeof(buf), "S%zu", s + 1);
-        return buf;
+        return "S" + std::to_string(s + 1);
     }
     std::size_t mono = 1;
     for (std::size_t i = 0; i < strip; ++i)
         if (!isStereoStrip(i)) ++mono;
-    char buf[16];
-    snprintf(buf, sizeof(buf), "M%02zu", mono);
-    return buf;
+    // Zero-padded mono numbering ("M01".."M32") so host lists sort naturally.
+    return mono < 10 ? "M0" + std::to_string(mono) : "M" + std::to_string(mono);
 }
 
 MixerProfile MixerProfile::legacyDefault() {
