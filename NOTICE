@@ -1,0 +1,34 @@
+# Notices and third-party material
+
+## This project
+
+The Cinemix Automation Bridge (this repository, excluding the items below) is
+licensed under the GPLv3 License (see LICENSE).
+
+## Legacy bridge (protocol knowledge and behavioral reference)
+
+The console protocol knowledge, addressing tables, activation/deactivation
+sequences and parameter layout are derived from the legacy
+[CinemixAutomationBridge](https://github.com/ZioGuido/CinemixAutomationBridge)
+by Guido Scognamiglio (GSi — Genuine Soundware and Instruments),
+programmed July 2012, last updated February 2017. The legacy source headers
+carry an MIT-style permission notice; its README additionally describes the
+original release as freeware. The unmodified legacy repository is preserved
+under `_legacy_analysis/` for reference. GSi, Genuine Soundware, D&R and the
+Cinemix are not affiliated with this project.
+
+## Vendored Apple AudioUnitSDK
+
+`mac/vendor/AudioUnitSDK/` contains Apple's
+[AudioUnitSDK](https://github.com/apple/AudioUnitSDK) (the classic initial
+2020 release, which targets macOS 10.9+), used **unmodified** to provide the
+AUBase component scaffolding for the AUv2 target. It is licensed under the
+Apache License 2.0; see `mac/vendor/AudioUnitSDK/LICENSE.txt`.
+Copyright © 2000–2021 Apple Inc. All rights reserved.
+
+## Dependencies
+
+None beyond the system frameworks (AudioToolbox, AudioUnit, CoreAudio,
+CoreMIDI, Cocoa, CoreAudioKit, Foundation) and the C++11 standard library
+for the portable core. No third-party plugin frameworks are used
+(brief §18).

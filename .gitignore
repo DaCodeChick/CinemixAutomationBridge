@@ -191,3 +191,5 @@ config.local.*
 
 Thumbs.db
 Desktop.ini
+# Cinemix harness artifacts
+*.cmi

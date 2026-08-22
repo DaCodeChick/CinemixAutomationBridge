@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>CinemixAutomationBridge</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.cinemixbridge.CinemixAutomationBridge</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Cinemix Automation Bridge</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.0.0</string>
+	<key>CFBundleSignature</key>
+	<string>CBRG</string>
+	<key>CFBundleVersion</key>
+	<string>2.0.0</string>
+	<key>AudioComponents</key>
+	<array>
+		<dict>
+			<key>name</key>
+			<string>Cinemix Automation Bridge</string>
+			<key>description</key>
+			<string>D&amp;R Cinemix automation bridge (Logic Pro)</string>
+			<key>factoryFunction</key>
+			<string>CinemixAUFactory</string>
+			<key>manufacturer</key>
+			<string>CBRG</string>
+			<key>subtype</key>
+			<string>DRcm</string>
+			<key>type</key>
+			<string>augn</string>
+			<key>version</key>
+			<integer>131072</integer>
+			<key>sandboxSafe</key>
+			<true/>
+			<key>hasCustomView</key>
+			<true/>
+		</dict>
+	</array>
+</dict>
+</plist>
