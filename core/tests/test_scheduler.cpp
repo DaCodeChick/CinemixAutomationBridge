@@ -183,6 +183,44 @@ TEST_CASE("scheduler: high-lane saturation drops newest reply, keeps order") {
     CHECK(f.transport.sentToPort1.size() > 0);
 }
 
+TEST_CASE("scheduler: 14-bit position — coarse/fine order and cancellation") {
+    Fixture f;
+    // A 14-bit fader position = coarse (MSB) + fine (LSB) continuation.
+    const MidiMessage coarse = MidiMessage::controlChange(1, 0, 63, 1);
+    const MidiMessage fine = MidiMessage::controlChange(1, 1, 127, 1);
+    f.sched.enqueuePosition(5, coarse);
+    f.sched.enqueuePositionContinuation(5, fine);
+    f.sched.drainToEmpty();
+    // MSB then LSB, both sent, in order.
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(2));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 0);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[1].data[1]), 1);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[1].data[2]), 127);
+}
+
+TEST_CASE("scheduler: cancelPosition removes both 14-bit components") {
+    Fixture f;
+    f.sched.enqueuePosition(5, MidiMessage::controlChange(1, 0, 63, 1));
+    f.sched.enqueuePositionContinuation(5, MidiMessage::controlChange(1, 1, 127, 1));
+    f.sched.enqueuePosition(6, MidiMessage::controlChange(1, 2, 10, 1));
+    f.sched.cancelPosition(5);
+    f.sched.drainToEmpty();
+    // Only parameter 6's position survives; neither 5's coarse nor fine.
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 2);
+}
+
+TEST_CASE("scheduler: cancelAllPositions removes 14-bit components too") {
+    Fixture f;
+    f.sched.enqueueCommand(cmd(3, 64, 1)); // a real command survives
+    f.sched.enqueuePosition(5, MidiMessage::controlChange(1, 0, 63, 1));
+    f.sched.enqueuePositionContinuation(5, MidiMessage::controlChange(1, 1, 127, 1));
+    f.sched.cancelAllPositions();
+    f.sched.drainToEmpty();
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 64);
+}
+
 TEST_CASE("scheduler: system reset passes through as a 1-byte message") {
     Fixture f;
     OutboundCommand c;

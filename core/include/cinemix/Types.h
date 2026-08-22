@@ -140,6 +140,9 @@ enum class CommandKind : std::uint8_t {
     RemoteControl = 1, // CC127 ch5: 127 = enter, 0 = exit remote mode
     SystemReset = 2, // 0xFF byte
     PositionUpdate = 3, // absolute position/state for one parameter
+    PositionFine = 4,   // non-coalescible continuation of a 14-bit position
+                        // (fine CC) — still carries its ParamId so it is
+                        // canceled together with its coarse component.
 };
 
 struct OutboundCommand {

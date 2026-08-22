@@ -3,7 +3,7 @@
 //
 // Threading contract:
 //   * `setHostParameter` / `getParameter` / `handleIncoming` are real-time
-//     safe (lock-free pushes / atomic loads) and may be called from any
+//     safe (atomic stores / atomic loads) and may be called from any
 //     thread (Logic's audio thread, CoreMIDI's read proc).
 //   * Everything else runs on the bridge worker thread (`start()`), which
 //     owns the scheduler, touch modes, test mode and all console I/O.
@@ -71,7 +71,10 @@ public:
     AutomationEngine(const AutomationEngine&) = delete;
     AutomationEngine& operator=(const AutomationEngine&) = delete;
 
-    void setListener(Listener* listener) { listener_ = listener; }
+    // The listener must outlive the engine, or be cleared here first.
+    // Stored atomically: the worker reads it and the destructor clears it
+    // across the worker-join boundary (Finding 2 lifecycle invariant).
+    void setListener(Listener* listener) { listener_.store(listener, std::memory_order_release); }
 
     // ---- Host-facing, real-time safe --------------------------------------
     // PRODUCER CONTRACT (resolved by audit): safe to call from MULTIPLE
@@ -163,7 +166,10 @@ private:
     TouchModeTracker touchModes_;
     FaderOscillator oscillator_;
     MidiParser parser_;
-    Listener* listener_;
+    // Cross-thread lifecycle state (Finding 2): written by the owner and the
+    // worker, read by both — atomic with explicit ordering. stopRequested_
+    // remains a plain bool because every access is under cmdMu_.
+    std::atomic<Listener*> listener_{nullptr};
 
     // Parameter state.
     std::unique_ptr<std::atomic<float>[]> values_;
@@ -197,8 +203,8 @@ private:
     std::mutex cmdMu_;
     std::condition_variable cmdCv_;
     std::deque<std::function<void()> > cmdQ_;
-    bool stopRequested_;
-    bool workerRunning_;
+    bool stopRequested_; // guarded by cmdMu_
+    std::atomic<bool> workerRunning_{false};
     std::thread worker_;
 };
 

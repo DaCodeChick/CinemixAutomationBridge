@@ -67,6 +67,19 @@ constexpr std::uint8_t kPortHi = 2;
 
 // Record payloads are 1..3 bytes per the format; zero-length records are
 // malformed (there is nothing to represent them).
+//
+// Single source of truth for the record domain: the writer and decoder use
+// these EXACT rules (Finding 3) so a successful write can never produce a
+// record the reader rejects.
+constexpr bool isValidDirection(std::uint8_t direction) noexcept {
+    return direction == kDirectionInbound || direction == kDirectionOutbound;
+}
+constexpr bool isValidPort(std::uint8_t port) noexcept {
+    return port == kPortBroadcast || port == kPortLo || port == kPortHi;
+}
+constexpr bool isValidPayloadLength(std::uint8_t length) noexcept {
+    return length >= 1 && length <= kMaxMessageLength;
+}
 
 // A fully encoded record, header included.
 struct EncodedRecord {
@@ -134,12 +147,16 @@ public:
     // Borrowed variant (tests): the stream is owned by the caller and must
     // outlive the writer.
     explicit CaptureWriter(std::ostream& out);
-    // Rule of Zero: the members (unique_ptr<ofstream>, reference, bool) own
-    // everything; the ofstream type is complete in this header, so the
-    // implicit destructor is correct. Copy is deleted (reference member);
-    // move construction remains available.
+    // Non-copyable and non-movable, by explicit contract (Finding 4). The
+    // reference member makes copying meaningless, and the class is never
+    // moved anywhere; both operations are deleted rather than left to
+    // suppressed-implicit-move ambiguity. The destructor follows the Rule of
+    // Zero: members (unique_ptr<ofstream>, reference, bool) own everything
+    // and the stream type is complete in this header.
     CaptureWriter(const CaptureWriter&) = delete;
     CaptureWriter& operator=(const CaptureWriter&) = delete;
+    CaptureWriter(CaptureWriter&&) = delete;
+    CaptureWriter& operator=(CaptureWriter&&) = delete;
 
     // True while the header has been written and no write has failed.
     // Once a write fails, ok() stays false and writeEvent() becomes a no-op:
@@ -162,9 +179,11 @@ class CaptureReader {
 public:
     explicit CaptureReader(const std::string& path);
     explicit CaptureReader(std::istream& in);
-    // Rule of Zero (see CaptureWriter).
+    // Non-copyable and non-movable (see CaptureWriter).
     CaptureReader(const CaptureReader&) = delete;
     CaptureReader& operator=(const CaptureReader&) = delete;
+    CaptureReader(CaptureReader&&) = delete;
+    CaptureReader& operator=(CaptureReader&&) = delete;
 
     // False when the stream could not be opened or is not a supported .cmi
     // (wrong magic or unsupported version — versions are never guessed).

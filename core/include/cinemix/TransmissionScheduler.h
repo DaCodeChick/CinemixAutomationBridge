@@ -54,6 +54,14 @@ public:
     // same parameter (latest wins).
     void enqueuePosition(ParamId param, const MidiMessage& message);
 
+    // Enqueue the non-coalescible fine (LSB) continuation of a 14-bit fader
+    // position. It keeps its ParamId so cancelPosition/cancelAllPositions
+    // remove it together with the coarse component, but it is NOT scanned by
+    // coalescing (the coarse component already coalesces the whole logical
+    // position). MUST be enqueued immediately after its coarse component to
+    // preserve MSB→LSB transmission order.
+    void enqueuePositionContinuation(ParamId param, const MidiMessage& message);
+
     // Drop a pending position update for one parameter (console beat us to it).
     void cancelPosition(ParamId param);
     // Drop all pending position updates (used right after enqueueing the

@@ -59,8 +59,17 @@ public:
 
     // ---- Endpoint selection (UI thread) -------------------------------------
     // Select by endpoint name ("" = none). Persisted by the UI layer.
-    // Connection failures are diagnosed; a failed connect leaves the role
-    // unconnected rather than half-claimed.
+    //
+    // selectInputs() returns true ONLY when every non-empty requested input
+    // was found AND its MIDIPortConnectSource succeeded (Finding 6): the
+    // Boolean means "requested input selection established", never merely
+    // "endpoint with that name exists". A failed connect leaves the role
+    // unconnected (src_ = 0) and logs the OSStatus.
+    //
+    // selectOutputs() has no separate connect step in CoreMIDI (destinations
+    // are addressed directly by handle), so its Boolean means "requested
+    // destinations resolved"; connected() (both outputs present) is what
+    // gates activation.
     bool selectInputs(const std::string& loSource, const std::string& hiSource);
     bool selectOutputs(const std::string& loDest, const std::string& hiDest);
     std::string input1Name() const { return input1Name_; }
@@ -72,6 +81,10 @@ public:
     bool send(std::uint8_t port, const cinemix::MidiMessage& message) override;
     bool connected() const override;
     std::string description() const override;
+    // Disconnects and disposes the input port. After this returns, CoreMIDI
+    // guarantees no further read-proc invocations (disposed-port contract),
+    // so onIncoming can be safely detached afterward. Idempotent.
+    void stopInbound() override;
 
 private:
     static void readProc(const MIDIPacketList* pktlist, void* refCon, void* connRefCon);

@@ -97,6 +97,20 @@ void TransmissionScheduler::enqueuePosition(ParamId param, const MidiMessage& me
     main_.push_back(entry);
 }
 
+void TransmissionScheduler::enqueuePositionContinuation(ParamId param,
+                                                         const MidiMessage& message) {
+    // Like a position entry, but appended without the coalescing scan (the
+    // coarse component already coalesced this logical position). Keeping the
+    // ParamId is what makes cancelPosition/cancelAllPositions reach it.
+    OutboundCommand command;
+    command.kind = CommandKind::PositionFine;
+    command.message = message;
+    command.param = param;
+    Entry entry;
+    entry.cmd = command;
+    main_.push_back(entry);
+}
+
 void TransmissionScheduler::cancelPosition(ParamId param) {
     for (std::deque<Entry>::iterator it = main_.begin(); it != main_.end();) {
         if (it->cmd.param == param) {

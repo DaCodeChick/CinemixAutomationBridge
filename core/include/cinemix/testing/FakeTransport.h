@@ -20,8 +20,12 @@ public:
     std::vector<cinemix::MidiMessage> sentToPort1;
     std::vector<cinemix::MidiMessage> sentToPort2;
     bool connectedFlag;
+    // Set by stopInbound(): simulates the CoreMIDI guarantee that no further
+    // inbound callbacks fire after the input port is quiesced. injectIncoming
+    // becomes a no-op once set (the engine's teardown relies on this).
+    bool inboundStopped;
 
-    FakeTransport() : connectedFlag(true) {}
+    FakeTransport() : connectedFlag(true), inboundStopped(false) {}
 
     bool send(std::uint8_t port, const cinemix::MidiMessage& message) override {
         if (!connectedFlag) return false;
@@ -32,12 +36,20 @@ public:
     bool connected() const override { return connectedFlag; }
     std::string description() const override { return "fake transport"; }
 
+    void stopInbound() override {
+        inboundStopped = true;
+        onIncoming = nullptr;
+    }
+
     void clear() {
         sentToPort1.clear();
         sentToPort2.clear();
     }
 
     void injectIncoming(const std::vector<std::uint8_t>& bytes) {
+        // After stopInbound(), no further inbound delivery may occur (the
+        // same contract CoreMIDI provides for a disposed port).
+        if (inboundStopped) return;
         if (onIncoming && !bytes.empty()) onIncoming(bytes.data(), bytes.size());
     }
 

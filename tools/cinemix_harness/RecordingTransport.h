@@ -34,6 +34,7 @@ public:
     }
     bool connected() const override { return inner_.connected(); }
     std::string description() const override { return inner_.description(); }
+    void stopInbound() override { inner_.stopInbound(); }
 
     // Inbound bytes from the console side: record (direction 0) and forward
     // to the transport's consumer.

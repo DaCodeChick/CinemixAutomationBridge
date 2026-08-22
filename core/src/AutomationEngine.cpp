@@ -23,7 +23,6 @@ AutomationEngine::AutomationEngine(const MixerProfile& profile, Diagnostics& dia
       scheduler_(profile, diag, transport),
       touchModes_(profile, protocol_, scheduler_),
       oscillator_(profile.faderCount()),
-      listener_(nullptr),
       values_(new std::atomic<float>[profile.paramCount()]),
       hostDirty_(profile.paramCount()),
       lastProcessed_(profile.paramCount(), -1.f),
@@ -31,7 +30,7 @@ AutomationEngine::AutomationEngine(const MixerProfile& profile, Diagnostics& dia
       touched_(profile.paramCount(), 0),
       activated_(false), testMode_(false), allMutes_(false),
       inbound_(kInboundQueueBytes),
-      stopRequested_(false), workerRunning_(false) {
+      stopRequested_(false) {
     for (std::size_t i = 0; i < profile_.paramCount(); ++i) {
         values_[i].store(paramMap_.info(static_cast<ParamId>(i)).defaultValue,
                          std::memory_order_relaxed);
@@ -48,15 +47,24 @@ AutomationEngine::AutomationEngine(const MixerProfile& profile, Diagnostics& dia
 }
 
 AutomationEngine::~AutomationEngine() {
+    // Teardown protocol (Finding 1): quiesce the inbound path BEFORE touching
+    // onIncoming or destroying state. stopInbound() guarantees (CoreMIDI
+    // disposed-port contract) that no further transport callback can run, so
+    // the detach below and the destruction of engine members cannot race a
+    // live callback. The outbound path remains usable for the release
+    // sequence that follows.
+    transport_.stopInbound();
+    transport_.onIncoming = nullptr;
+
     // The listener may already be destroyed (members of an owner class are
     // torn down in reverse declaration order); never call it from here.
-    listener_ = nullptr;
+    listener_.store(nullptr, std::memory_order_release);
 
     // Safety net (legacy destructor behavior): always release the console.
     // If the worker is running, ask it to deactivate before stopping; if not,
     // run the release sequence inline. After this destructor returns, nothing
     // runs and nothing sends.
-    if (workerRunning_) {
+    if (workerRunning_.load(std::memory_order_acquire)) {
         if (activated_.load(std::memory_order_acquire)) {
             std::lock_guard<std::mutex> lock(cmdMu_);
             cmdQ_.push_back([this]() { deactivateInternal(); });
@@ -67,7 +75,6 @@ AutomationEngine::~AutomationEngine() {
         deactivateInternal();
         scheduler_.drainToEmpty();
     }
-    transport_.onIncoming = nullptr;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,22 +156,22 @@ void AutomationEngine::setTestMode(bool on) {
 // Thread control
 
 void AutomationEngine::start() {
-    if (workerRunning_) return;
+    if (workerRunning_.load(std::memory_order_acquire)) return;
     stopRequested_ = false;
-    workerRunning_ = true;
+    workerRunning_.store(true, std::memory_order_release);
     try {
         worker_ = std::thread(&AutomationEngine::workerLoop, this);
     } catch (const std::system_error&) {
         // Thread creation failed (resource exhaustion): leave a coherent
         // stopped state, never a half-running engine.
-        workerRunning_ = false;
+        workerRunning_.store(false, std::memory_order_release);
         diag_.error("cannot create bridge worker thread");
         throw;
     }
 }
 
 void AutomationEngine::stop() {
-    if (!workerRunning_) return;
+    if (!workerRunning_.load(std::memory_order_acquire)) return;
     {
         std::lock_guard<std::mutex> lock(cmdMu_);
         stopRequested_ = true;
@@ -299,7 +306,10 @@ void AutomationEngine::handleConsoleEvent(const ConsoleEvent& event) {
             paramMap_.stripFaderId(event.control.strip, event.control.path);
         if (faderParam == kNoParam) return;
         touched_[faderParam] = 1;
-        if (listener_ && !testModeActive) listener_->onGesture(faderParam, true);
+        if (!testModeActive) {
+            Listener* listener = listener_.load(std::memory_order_acquire);
+            if (listener) listener->onGesture(faderParam, true);
+        }
         touchModes_.onTouchChanged(event.control.strip, event.control.path, true);
         break;
     }
@@ -308,7 +318,10 @@ void AutomationEngine::handleConsoleEvent(const ConsoleEvent& event) {
             paramMap_.stripFaderId(event.control.strip, event.control.path);
         if (faderParam == kNoParam) return;
         touched_[faderParam] = 0;
-        if (listener_ && !testModeActive) listener_->onGesture(faderParam, false);
+        if (!testModeActive) {
+            Listener* listener = listener_.load(std::memory_order_acquire);
+            if (listener) listener->onGesture(faderParam, false);
+        }
         touchModes_.onTouchChanged(event.control.strip, event.control.path, false);
         break;
     }
@@ -367,7 +380,10 @@ void AutomationEngine::setParamInternal(ParamId param, float value, Origin origi
             }
         }
     }
-    if (notify && listener_) listener_->onParameter(param, clamped, origin);
+    if (notify) {
+        Listener* listener = listener_.load(std::memory_order_acquire);
+        if (listener) listener->onParameter(param, clamped, origin);
+    }
 }
 
 void AutomationEngine::enqueueOutbound(ParamId param, float value) {
@@ -379,15 +395,12 @@ void AutomationEngine::enqueueOutbound(ParamId param, float value) {
             protocol_.encodeStripFader(control.strip, control.path, value);
         if (!messages.empty()) {
             scheduler_.enqueuePosition(param, messages[0]);
-            // 14-bit mode sends a fine CC as well; append it without
-            // coalescing (it must not be dropped when a newer MSB arrives).
-            for (std::size_t i = 1; i < messages.size(); ++i) {
-                OutboundCommand command;
-                command.kind = CommandKind::SetMode;
-                command.message = messages[i];
-                command.param = kNoParam;
-                scheduler_.enqueueCommand(command);
-            }
+            // 14-bit mode sends a fine CC as well; it is a non-coalescible
+            // continuation of THIS position (Finding 5): it keeps param so it
+            // is canceled with the coarse component, but is not coalesced
+            // independently and never masquerades as a mode command.
+            for (std::size_t i = 1; i < messages.size(); ++i)
+                scheduler_.enqueuePositionContinuation(param, messages[i]);
         }
         break;
     }
@@ -440,7 +453,8 @@ void AutomationEngine::snapshotInternal(Origin origin) {
         lastProcessed_[param] = value;
         lastCommanded_[param] = value;
         if (activated_.load(std::memory_order_acquire)) enqueueOutbound(param, value);
-        if (listener_) listener_->onParameter(param, value, origin);
+        Listener* listener = listener_.load(std::memory_order_acquire);
+        if (listener) listener->onParameter(param, value, origin);
     }
     diag_.info("snapshot sent");
 }
@@ -485,7 +499,10 @@ void AutomationEngine::activateInternal() {
     touchModes_.setMasterMode(3);
     touchModes_.setJoystickModes(3);
 
-    if (listener_) listener_->onConnected(true);
+    {
+        Listener* listener = listener_.load(std::memory_order_acquire);
+        if (listener) listener->onConnected(true);
+    }
     diag_.info("console activated");
 }
 
@@ -521,11 +538,15 @@ void AutomationEngine::deactivateInternal() {
     for (std::size_t param = 0; param < touched_.size(); ++param) {
         if (touched_[param]) {
             touched_[param] = 0;
-            if (listener_) listener_->onGesture(static_cast<ParamId>(param), false);
+            Listener* listener = listener_.load(std::memory_order_acquire);
+            if (listener) listener->onGesture(static_cast<ParamId>(param), false);
         }
     }
     activated_.store(false, std::memory_order_release);
-    if (listener_) listener_->onConnected(false);
+    {
+        Listener* listener = listener_.load(std::memory_order_acquire);
+        if (listener) listener->onConnected(false);
+    }
     diag_.info("console deactivated");
 }
 
@@ -586,7 +607,7 @@ void AutomationEngine::workerLoop() {
             processInbound();
             processHostEvents();
             scheduler_.drainToEmpty();
-            workerRunning_ = false;
+            workerRunning_.store(false, std::memory_order_release);
             return;
         }
 

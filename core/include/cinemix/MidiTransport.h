@@ -32,8 +32,18 @@ public:
     // Short human-readable description for the UI/diagnostics.
     virtual std::string description() const = 0;
 
+    // Quiesce the inbound path. After this returns, the transport guarantees
+    // it will never invoke `onIncoming` again (CoreMIDI: the input port is
+    // disconnected and disposed, and a disposed port's read proc is never
+    // re-entered). Idempotent. This is the lifecycle synchronization point:
+    // the engine calls it before detaching `onIncoming` or destroying itself,
+    // so a live transport callback can never race engine teardown
+    // (Finding 1 of the final correction pass).
+    virtual void stopInbound() = 0;
+
     // Inbound bytes from the console (any producer thread). The handler must
-    // be fast (copy into a queue). Set once before use.
+    // be fast (copy into a queue). Set once before the transport starts and
+    // cleared only after stopInbound() has returned.
     std::function<void(const uint8_t* data, size_t n)> onIncoming;
 };
 

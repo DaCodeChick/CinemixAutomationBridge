@@ -47,11 +47,8 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept 
     const std::uint8_t direction = data[kDirectionOffset];
     const std::uint8_t port = data[kPortOffset];
     const std::uint8_t length = data[kLengthOffset];
-    const bool directionValid =
-        (direction == kDirectionInbound || direction == kDirectionOutbound);
-    const bool portValid = (port == kPortBroadcast || port == kPortLo || port == kPortHi);
-    const bool lengthValid = (length >= 1 && length <= kMaxMessageLength);
-    if (!directionValid || !portValid || !lengthValid) {
+    if (!isValidDirection(direction) || !isValidPort(port) ||
+        !isValidPayloadLength(length)) {
         result.status = DecodeStatus::Malformed;
         return result;
     }
@@ -109,11 +106,13 @@ void CaptureWriter::writeEvent(const CaptureEvent& event) {
         failed_ = true;
         return;
     }
-    // Structurally invalid payloads (0 or >3 bytes) are caller bugs and have
-    // no format representation; skip them so the writer never emits a record
-    // the decoder would reject. This is not an I/O failure: ok() stays true.
-    if (event.message.length < 1 ||
-        event.message.length > capture_detail::kMaxMessageLength)
+    // Reject structurally invalid records using the SAME domain rules the
+    // decoder enforces (Finding 3): a successful write can never emit a
+    // record the reader would reject. This is a caller bug, not an I/O
+    // failure, so ok() stays true and the writer remains usable.
+    if (!capture_detail::isValidDirection(event.direction) ||
+        !capture_detail::isValidPort(event.port) ||
+        !capture_detail::isValidPayloadLength(event.message.length))
         return;
     const capture_detail::EncodedRecord record = capture_detail::encodeRecord(event);
     out_.write(reinterpret_cast<const char*>(record.bytes.data()),

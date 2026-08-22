@@ -573,6 +573,34 @@ TEST_CASE("engine: test mode moves faders only and restores modes") {
     CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 3);
 }
 
+TEST_CASE("engine: repeated start/stop/destroy is race-free") {
+    // Worker-lifecycle stress (Finding 2): hammer start/stop/restart and
+    // destruction while the worker is alive. Under TSan this exercises the
+    // workerRunning_/listener_ atomics and the join/restart boundary.
+    MixerProfile profile = MixerProfile::legacyDefault();
+    Diagnostics diag;
+    diag.setLevel(Diagnostics::Level::Error);
+    FakeTransport transport;
+    for (int round = 0; round < 20; ++round) {
+        AutomationEngine engine(profile, diag, transport);
+        engine.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        engine.stop();
+        engine.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        engine.stop();
+        // Destructor runs while the worker is stopped; then one more round
+        // where destruction happens with a live worker.
+        if (round % 2 == 0) {
+            AutomationEngine* live = new AutomationEngine(profile, diag, transport);
+            live->start();
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            delete live; // destructor with a running worker
+        }
+    }
+    CHECK(true);
+}
+
 TEST_CASE("engine: test mode requires an activated console") {
     Fixture f;
     f.engine.setTestMode(true);

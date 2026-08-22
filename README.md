@@ -26,7 +26,7 @@ maintainable **C++14 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
 
 ## Status (honest)
 
-* **Portable core + tests: built and passing on Linux** (87 test cases:
+* **Portable core + tests: built and passing on Linux** (93 test cases:
   protocol gold data, parser robustness, legacy parameter layout, scheduler,
   engine with byte-exact activation/deactivation sequences, echo suppression,
   feedback-loop prevention, capture/replay).
@@ -86,6 +86,7 @@ the project maintainer (NOTICE).
 4. **macOS 10.13 compatibility** — deployment target 10.13, x86-64, AppKit,
    no modern-OS-only APIs.
 5. **Real-time safety** — the render loop only writes silence; all MIDI work
-   happens on a dedicated worker; host/audio threads only do lock-free pushes.
+   happens on a dedicated worker; host/audio threads only do wait-free
+   atomic stores (value + dirty flag), scanned by the worker every tick.
 6. **Maintainability** — small focused classes, table-driven protocol,
    explicit mixer profile, no dumping grounds.

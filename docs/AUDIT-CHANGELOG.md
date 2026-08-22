@@ -369,3 +369,113 @@ order preserved).
 * Harness selftest, capture/replay, demo: passing.
 * Verification categories remain strict: macOS/AU/CoreMIDI/Logic/hardware
   items are IMPLEMENTED only and explicitly marked for target validation.
+
+
+---
+
+# Final Pre-Hardware Correction Pass
+
+## Finding 1 — CoreMIDI / AutomationEngine teardown race
+**Finding:** the engine destructor cleared `transport_.onIncoming` while the
+CoreMIDI input port was still alive, and the engine could be destroyed while a
+read-proc callback was in flight — a `std::function` data race plus potential
+use-after-destroy of the engine.
+**Confirmed:** yes — destructor assigned `onIncoming = nullptr` before any
+input-port disposal, and the AU destroyed the engine before the transport.
+**Correction:** new `IMidiTransport::stopInbound()` — quiesce the inbound path
+(disconnect sources + dispose the input port; CoreMIDI guarantees no further
+read-proc invocations after dispose). The engine destructor now calls
+`stopInbound()` FIRST, then detaches `onIncoming`, then runs the safety
+deactivation (outbound path still alive). `CoreMidiTransport::shutdown()`
+reuses the same step; `FakeTransport`/`RecordingTransport` implement it.
+**Tests:** portable test asserts inbound delivery is a no-op after
+`stopInbound()`; real quiescence is `TARGET-MAC TEST REQUIRED` (CoreMIDI's
+disposed-port contract cannot be reproduced on Linux).
+**Remaining target validation:** CoreMIDI callback quiescence on macOS.
+
+## Finding 2 — `workerRunning_` cross-thread data race
+**Finding:** `workerRunning_` was a plain `bool` written by the worker thread
+and read/written by lifecycle threads — a C++ data race. `listener_` had the
+same problem (worker reads vs destructor nulling).
+**Confirmed:** yes (traced in source).
+**Correction:** `workerRunning_` → `std::atomic<bool>`; `listener_` →
+`std::atomic<Listener*>` (in-class `{false}`/`{nullptr}` initialization;
+acquire/release ordering). `stopRequested_` remains a plain bool because every
+access is under `cmdMu_`. `listener_` reads load once into a local before
+invocation.
+**Tests:** repeated start/stop/start/stop/destroy stress test added; the whole
+engine suite (27 cases) is ThreadSanitizer-clean on Linux.
+**Remaining target validation:** none (portable).
+
+## Finding 3 — CaptureWriter could emit records the reader rejects
+**Finding:** the writer validated only payload length, so invalid direction/port
+events serialized successfully and were then rejected by the reader.
+**Confirmed:** yes.
+**Correction:** single source of truth — `capture_detail::isValidDirection` /
+`isValidPort` / `isValidPayloadLength` are used by BOTH the writer and the
+decoder. `writeEvent` skips structurally invalid records (caller bug, not an
+I/O failure; `ok()` stays true).
+**Tests:** writer-rejects-invalid-direction/port/length round trip (only the
+valid record survives and is accepted); decoder malformed cases retained.
+**Remaining target validation:** none (portable).
+
+## Finding 4 — CaptureWriter move/Rule-of-Zero documentation incorrect
+**Finding:** the header claimed "move construction remains available" after the
+destructor was removed, but the user-declared deleted copy constructor
+suppresses the implicit move constructor.
+**Confirmed:** yes — the class was effectively non-movable, contradicting the
+comment.
+**Correction:** the contract is now explicit: non-copyable AND non-movable
+(move operations `= delete`d); the comment states the actual C++14 behavior.
+**Tests:** `static_assert(!std::is_copy/move_constructible/assignable)` for
+writer and reader.
+**Remaining target validation:** none (portable).
+
+## Finding 5 — 14-bit fine CC escaped position cancellation
+**Finding:** the 14-bit fine CC was queued as `SetMode` with `kNoParam`, so
+`cancelPosition`/`cancelAllPositions` removed the coarse component but left the
+fine component orphaned to transmit.
+**Confirmed:** yes.
+**Correction:** new `CommandKind::PositionFine` and
+`TransmissionScheduler::enqueuePositionContinuation(param, message)` — the fine
+CC keeps its `ParamId` (cancellable, included in `hasPending`) but is not
+coalesced independently, and is enqueued immediately after its coarse
+component (MSB→LSB order preserved). The engine's 14-bit path uses it; no
+legacy byte representation changed.
+**Tests:** coarse/fine ordering, `cancelPosition` removes both components,
+`cancelAllPositions` removes both, isolation (canceling A leaves B intact).
+**Remaining target validation:** none for the plumbing; the 14-bit on-wire
+behavior itself remains unverified on hardware (as before).
+
+## Finding 6 — `selectInputs()` return value did not mean connected
+**Finding:** the Boolean reflected whether the endpoint was FOUND, not whether
+`MIDIPortConnectSource` succeeded.
+**Confirmed:** yes.
+**Correction:** `selectInputs()` now returns true only when every non-empty
+requested input is found AND connected; connect failures log the `OSStatus`
+and leave `src_` = 0. Contract documented in the header (outputs have no
+separate connect step — `connected()` gates activation).
+**Remaining target validation:** CoreMIDI connect-failure paths (macOS only).
+
+## Adjacent checks
+* **A (stale threading docs):** corrected "lock-free enqueue/push / host event
+  queue" wording in `CinemixAU.h/.mm`, `AutomationEngine.h`, README to the
+  actual atomic value + dirty-flag design.
+* **B (HostBridge lifetime):** verified — the AU destructor body destroys the
+  engine (joining the worker) while `HostBridge` is still alive; `HostBridge`
+  is destroyed only afterward. Left nested; pointer `CinemixAU* au_` kept
+  (reference conversion is optional polish, not a defect).
+* **C (Rule of Zero):** no new explicitly-defaulted destructors introduced;
+  the capture classes are now explicitly non-movable (see Finding 4).
+* **D (no new C buffers):** none introduced; direct string construction kept.
+
+## Verification
+* 93 test cases across 8 suites, all passing (Linux, gcc 16, C++14, zero
+  warnings under the first-party warning set).
+* ASan/UBSan clean on every suite; ThreadSanitizer clean on the engine suite
+  (27 cases: multi-producer stress, worker lifecycle, repeated
+  start/stop/destroy).
+* Harness selftest, capture/replay, demo: passing.
+* macOS/AU/CoreMIDI/Logic/hardware items remain IMPLEMENTED and explicitly
+  marked TARGET-MAC TEST REQUIRED — nothing is claimed as HARDWARE/LOGIC/
+  TARGET-MAC TESTED.

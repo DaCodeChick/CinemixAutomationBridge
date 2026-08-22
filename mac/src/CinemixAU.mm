@@ -127,7 +127,7 @@ OSStatus CinemixAU::SetParameter(AudioUnitParameterID inID, AudioUnitScope inSco
                                  UInt32 /*inBufferOffsetInFrames*/) {
     if (inScope != kAudioUnitScope_Global || inElement != 0) return kAudioUnitErr_InvalidParameter;
     if (inID >= engine_->parameterCount()) return kAudioUnitErr_InvalidParameter;
-    // Real-time safe: atomic store + lock-free enqueue (never allocates).
+    // Real-time safe: two atomic stores (value + dirty flag), no queue.
     engine_->setHostParameter(static_cast<cinemix::ParamId>(inID),
                               static_cast<float>(inValue));
     return noErr;

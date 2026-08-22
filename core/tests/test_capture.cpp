@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <string>
 #include <sstream>
+#include <type_traits>
 #include <unistd.h>
 
 #include "TestFramework.h"
@@ -265,6 +266,48 @@ TEST_CASE("capture: structurally invalid payloads are skipped, not written") {
     CHECK_EQ(event.timestampUs, static_cast<std::uint64_t>(2)); // only the valid record
     CHECK(!reader.next(event));
     CHECK_EQ(reader.corruptCount(), static_cast<size_t>(0));
+}
+
+TEST_CASE("capture writer: rejects records the reader would reject") {
+    std::stringstream buffer(std::ios::in | std::ios::out | std::ios::binary);
+    {
+        CaptureWriter writer(buffer);
+        CHECK(writer.ok());
+
+        CaptureEvent bad = makeEvent(1, 1, 1, MidiMessage::controlChange(1, 0, 63, 1));
+        bad.direction = 9; // invalid
+        writer.writeEvent(bad);
+
+        bad = makeEvent(2, 1, 1, MidiMessage::controlChange(1, 0, 63, 1));
+        bad.port = 9; // invalid
+        writer.writeEvent(bad);
+
+        bad = makeEvent(3, 1, 1, MidiMessage::controlChange(1, 0, 63, 1));
+        bad.message.length = 0; // invalid
+        writer.writeEvent(bad);
+
+        writer.writeEvent(makeEvent(4, 1, 1, MidiMessage::controlChange(1, 0, 63, 1)));
+        CHECK(writer.ok()); // rejection is not an I/O failure
+    }
+    // Only the single valid record survives, and the reader accepts it.
+    buffer.seekg(0);
+    CaptureReader reader(buffer);
+    CHECK(reader.ok());
+    CaptureEvent event;
+    CHECK(reader.next(event));
+    CHECK_EQ(event.timestampUs, static_cast<std::uint64_t>(4));
+    CHECK(!reader.next(event));
+    CHECK_EQ(reader.corruptCount(), static_cast<size_t>(0));
+}
+
+TEST_CASE("capture writer: copy/move contract is explicit") {
+    static_assert(!std::is_copy_constructible<CaptureWriter>::value, "writer not copyable");
+    static_assert(!std::is_copy_assignable<CaptureWriter>::value, "writer not copy-assignable");
+    static_assert(!std::is_move_constructible<CaptureWriter>::value, "writer not movable");
+    static_assert(!std::is_move_assignable<CaptureWriter>::value, "writer not move-assignable");
+    static_assert(!std::is_copy_constructible<CaptureReader>::value, "reader not copyable");
+    static_assert(!std::is_move_constructible<CaptureReader>::value, "reader not movable");
+    CHECK(true);
 }
 
 } // namespace

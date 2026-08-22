@@ -3,7 +3,7 @@
 // An 'augn' generator: zero audio inputs, stereo silence output. Its purpose
 // is automation, not DSP: the render loop does nothing but zero-fill, all
 // console traffic happens on the bridge worker thread, and SetParameter is
-// real-time safe (lock-free enqueue into the core).
+// real-time safe (atomic value + dirty flag; the worker scans per tick).
 //
 // Implemented but NOT compiled on the development host (Linux). Build and
 // auval on the target Mac — see docs/BUILDING.md.

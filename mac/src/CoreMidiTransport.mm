@@ -38,11 +38,23 @@ CoreMidiTransport::~CoreMidiTransport() {
 
 void CoreMidiTransport::shutdown() noexcept {
     // Idempotent, order-safe disposal of every resource that may exist at
-    // any stage of initialization. Sources are disconnected before the input
-    // port is disposed; ports before the client. CoreMIDI guarantees no
-    // further read-proc invocations after the port/client dispose, so the
+    // any stage of initialization. Input quiesced first (stopInbound), then
+    // output ports, then the client. CoreMIDI guarantees no further
+    // read-proc invocations after the input port/client dispose, so the
     // `this` captured in the read proc cannot be called during or after
     // shutdown (callback lifetime invariant, brief §26).
+    stopInbound();
+    if (outPort1_ != 0) { MIDIPortDispose(outPort1_); outPort1_ = 0; }
+    if (outPort2_ != 0) { MIDIPortDispose(outPort2_); outPort2_ = 0; }
+    dst1_.store(0, std::memory_order_release);
+    dst2_.store(0, std::memory_order_release);
+    if (client_ != 0) { MIDIClientDispose(client_); client_ = 0; }
+}
+
+void CoreMidiTransport::stopInbound() noexcept {
+    // Disconnect then dispose: after MIDIPortDispose returns, CoreMIDI will
+    // not re-enter the read proc. This is the ordering point the engine
+    // relies on before detaching onIncoming / destroying itself.
     if (inPort_ != 0) {
         if (src1_ != 0) MIDIPortDisconnectSource(inPort_, src1_);
         if (src2_ != 0) MIDIPortDisconnectSource(inPort_, src2_);
@@ -51,11 +63,6 @@ void CoreMidiTransport::shutdown() noexcept {
         MIDIPortDispose(inPort_);
         inPort_ = 0;
     }
-    if (outPort1_ != 0) { MIDIPortDispose(outPort1_); outPort1_ = 0; }
-    if (outPort2_ != 0) { MIDIPortDispose(outPort2_); outPort2_ = 0; }
-    dst1_.store(0, std::memory_order_release);
-    dst2_.store(0, std::memory_order_release);
-    if (client_ != 0) { MIDIClientDispose(client_); client_ = 0; }
 }
 
 bool CoreMidiTransport::start() {
@@ -141,17 +148,27 @@ bool CoreMidiTransport::selectInputs(const std::string& loSource, const std::str
         src1_ = 0;
         src2_ = 0;
         if (lo) {
-            if (MIDIPortConnectSource(inPort_, lo, nullptr) == noErr) src1_ = lo;
-            else diag_.warning("CoreMIDI: connect failed for input 1: " + loSource);
+            const OSStatus status = MIDIPortConnectSource(inPort_, lo, nullptr);
+            if (status == noErr) src1_ = lo;
+            else diag_.warning("CoreMIDI: connect failed for input 1: " + loSource +
+                               " (OSStatus " + std::to_string(status) + ")");
         }
         if (hi) {
-            if (MIDIPortConnectSource(inPort_, hi, nullptr) == noErr) src2_ = hi;
-            else diag_.warning("CoreMIDI: connect failed for input 2: " + hiSource);
+            const OSStatus status = MIDIPortConnectSource(inPort_, hi, nullptr);
+            if (status == noErr) src2_ = hi;
+            else diag_.warning("CoreMIDI: connect failed for input 2: " + hiSource +
+                               " (OSStatus " + std::to_string(status) + ")");
         }
     }
     if (!lo && !loSource.empty()) diag_.warning("MIDI input 1 not found: " + loSource);
     if (!hi && !hiSource.empty()) diag_.warning("MIDI input 2 not found: " + hiSource);
-    return (lo || loSource.empty()) && (hi || hiSource.empty());
+
+    // Contract (Finding 6): true iff every requested input is actually
+    // connected (found AND MIDIPortConnectSource succeeded), not merely
+    // found. An empty (unrequested) role counts as satisfied.
+    const bool loOk = loSource.empty() || (lo != 0 && src1_ != 0);
+    const bool hiOk = hiSource.empty() || (hi != 0 && src2_ != 0);
+    return loOk && hiOk;
 }
 
 bool CoreMidiTransport::selectOutputs(const std::string& loDest, const std::string& hiDest) {
