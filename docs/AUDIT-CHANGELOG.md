@@ -155,3 +155,139 @@ material keeps its own attribution. No vendored file was modified.
 * First-party core/harness build warning-free under the strong warning set.
 * macOS sources remain implemented-but-uncompiled here; nothing in this pass
   changed that status, and no AU/Logic/hardware validation is claimed.
+
+---
+
+# Second Surgical Audit — Correctness Pass
+
+## SPSC producer contract (host parameter writes) — FIXED
+
+**Finding:** `setHostParameter()` was documented "any thread", but it pushed
+into a single-producer ring; the only caller is AUv2 `SetParameter`, which the
+host may invoke from several threads concurrently (audio thread plus UI
+threads). Two concurrent producers could pass the fullness check and stomp
+the same slot — a real lost-update/race defect.
+**Severity:** high (concurrency contract violation, silent lost automation).
+**Evidence:** `CinemixAU::SetParameter → AutomationEngine::setHostParameter`;
+Apple's AUv2 `SetParameter` has no single-caller contract.
+**Correction:** removed the host-event ring entirely. `setHostParameter` is
+now two atomic stores (value + per-parameter dirty flag); the worker — which
+already wakes every 1 ms — exchanges the flags and processes the latest
+values. Wait-free, multi-producer safe, latest-wins by construction, and no
+overflow loss is possible. The SPSC byte ring remains only for inbound MIDI,
+whose single producer is CoreMIDI's serialized read proc (documented at
+`handleIncoming`).
+**Tests:** 4-thread × 5000-write stress test added; the whole engine suite
+(26 cases, including worker-thread and destructor tests) passes under
+ThreadSanitizer on Linux.
+**Target validation required:** none (pure portable core).
+
+## Scheduler position-command modeling — FIXED
+
+**Finding:** position updates were stored in `OutboundCommand` with
+`kind = SetMode` ("irrelevant for positions") — a value lying about its
+meaning.
+**Correction:** added `CommandKind::PositionUpdate` and use it; no behavioral
+change.
+
+## Scheduler queue-full policy — MADE EXPLICIT
+
+**Finding:** lane overflow behavior was implicit (unbounded deque).
+**Correction:** both lanes are capped at 1024 entries (far above the largest
+legitimate burst). Over-cap commands are dropped and counted with a
+rate-limited warning; `SystemReset` is safety-critical and instead evicts the
+oldest entry; the high lane drops the NEWEST reply (absolute mode state —
+superseded by the next one) and never reorders older replies. Policy
+documented in `TransmissionScheduler.h` and regression-tested.
+
+## CaptureFile — genuine second pass
+
+**Finding:** write failures were invisible (short `fwrite` unchecked, `ok()`
+kept reporting success); direction/port fields were not validated although
+`Malformed` implied they were; endian helpers took unchecked output pointers;
+ownership used hand-rolled `FILE*` deleters.
+**Correction:** switched the file layer to `std::ofstream`/`std::ifstream`
+(RAII, explicit stream state; borrowed-stream constructors enable in-memory
+`std::stringstream` testing — brief §7 decision documented in the header);
+pure codecs now return fixed-size `std::array` values (`encodeU32Le`/
+`encodeU64Le`/`decode…`) — the encoded size lives in the type and there is
+no unchecked output pointer; `decodeRecord` validates direction ∈ {0,1} and
+port ∈ {0,1,2}; the writer flushes after every write so buffered-stream
+write failures (e.g. ENOSPC on `/dev/full`) mark the writer failed, `ok()`
+stays false and later writes are no-ops. Format unchanged.
+**Tests:** `/dev/full` failure-state test, invalid direction/port tests,
+stringstream round trip, truncated/malformed/version cases — all passing.
+
+## CoreMIDI startup and partial initialization — FIXED
+
+**Finding:** `MIDIOutputPortCreate` results were ignored, so `start()` could
+report success without the required output ports; cleanup was duplicated in
+the destructor and not failure-path safe.
+**Correction:** every CoreMIDI creation result is checked; any failure
+disposes everything created so far via one idempotent `shutdown()` (also the
+destructor's single path) and returns false with diagnostics.
+`MIDIPortConnectSource` failures are diagnosed and leave the role
+unconnected rather than half-claimed.
+**Target validation required:** yes — CoreMIDI failure paths cannot be
+reproduced on Linux; marked for the target Mac.
+
+## Topology handling — MADE COHERENT (polling-only)
+
+**Finding:** a notification callback API (`topologyDirty_`, handler, user
+pointer) existed but was never invoked — dead infrastructure beside the UI's
+0.5 s polling.
+**Correction:** removed the dead callback API entirely; the Cocoa view's
+polling timer is now the single documented topology mechanism (it only
+rebuilds popups whose item lists actually changed). No AppKit code is ever
+called from a CoreMIDI callback thread.
+
+## Test Faders robustness — HARDENED
+
+**Finding:** endpoint loss mid-test left the oscillator computing against a
+dead transport; the UI label "Test Mode" understated that physical motors
+move.
+**Correction:** the oscillator step checks `transport.connected()` and
+self-stops (modes restored, queued positions canceled) on disconnect; the
+UI control is now labeled **Test Faders** / **Stop Fader Test**; status shows
+"fader test running". Destructor-while-active and mute-suppression behavior
+regression-tested.
+
+## UI lifetime — FIXED
+
+**Finding:** the refresh timer strongly retained the view (dealloc
+unreachable — leak and post-window refresh); the log queue was manually
+`new`/`delete`d.
+**Correction:** block-based `NSTimer` with a weak capture (10.12+),
+invalidated in `viewWillMoveToWindow:` and `-dealloc`; the log deque is now
+a C++ value member (RAII, ARC-safe).
+
+## Dead code removed
+
+- `EventKind::JoyMuteChanged` (never produced — joystick mutes decode as
+  `MuteChanged`).
+- `kCinemixComponentDescription` (unused; identity documented instead).
+- CoreMIDI topology notification members (see above).
+- `TestModeAnimator` was already removed in the first audit — confirmed no
+  active-source remnant remains (grep-verified; legacy material lives in
+  `_legacy_analysis/`).
+
+## Error handling / misc
+
+- `AutomationEngine::start()` now catches `std::system_error` from thread
+  creation, resets to a coherent stopped state, logs and rethrows.
+- Inbound CCs are now logged at the `MidiIn` diagnostics level (the level
+  previously existed with no producer).
+- `Diagnostics::log` shadowing bug was already fixed in pass 1; re-verified
+  under `-Wshadow`.
+- ObjC casts (`(NSButton*)sender`) remain idiomatic Objective-C by decision
+  (brief §19) — `-Wold-style-cast` is a C++-side policy, not ObjC syntax.
+
+## Verification
+
+- 83 test cases across 8 suites: all passing (Linux, gcc 16, C++14).
+- ASan + UBSan clean on every suite; ThreadSanitizer clean on the engine
+  suite (26 cases including the 4-thread producer stress test).
+- Harness selftest, capture/replay, demo: passing.
+- Zero warnings under the first-party warning set.
+- macOS/AU/CoreMIDI failure paths remain IMPLEMENTED, NOT TARGET-MAC TESTED;
+  nothing in this pass claims otherwise.

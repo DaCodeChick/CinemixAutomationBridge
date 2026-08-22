@@ -4,7 +4,7 @@
 
 | Component | Language | Standard | Builds on | Status |
 | --- | --- | --- | --- | --- |
-| `core/` (portable Cinemix core) | C++14 | C++14 | Linux/macOS | **built and tested on Linux (75 test cases)** |
+| `core/` (portable Cinemix core) | C++14 | C++14 | Linux/macOS | **built and tested on Linux (83 test cases)** |
 | `tools/cinemix_harness` | C++14 | C++14 | Linux/macOS | **built and tested on Linux** |
 | `mac/` AUv2 component (includes SDK headers) | ObjC++ | gnu++17 | macOS only | **implemented; compile/validate on the target Mac** |
 | `mac/` CoreMIDI/Config/AppKit glue | ObjC++ | C++14 | macOS only | **implemented; compile/validate on the target Mac** |
@@ -82,7 +82,7 @@ conflict with the old GSi AU.
 
 | Claim | Status |
 | --- | --- |
-| Portable core compiles (C++14, `-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wold-style-cast -Wshadow`) | **verified here (Linux, gcc 16, ASan/UBSan)** |
+| Portable core compiles (C++14, `-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wold-style-cast -Wshadow`) | **verified here (Linux, gcc 16, ASan/UBSan; engine suite also ThreadSanitizer-clean)** |
 | Core test suite (56 cases: protocol, parser, map, scheduler, engine, capture, ring) | **verified here** |
 | Harness selftest/capture/replay | **verified here** |
 | AUv2 component builds | **not verified — requires the target Mac** |
