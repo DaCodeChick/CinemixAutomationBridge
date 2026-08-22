@@ -1,0 +1,193 @@
+# ============================================================
+# macOS
+# ============================================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+Icon?
+
+._*
+
+.Spotlight-V100
+.Trashes
+
+# ============================================================
+# Xcode
+# ============================================================
+
+build/
+DerivedData/
+
+*.xcuserstate
+xcuserdata/
+
+*.xccheckout
+*.xcscmblueprint
+
+# Keep shared schemes
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/xcshareddata/
+
+# Xcode legacy build artifacts
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# ============================================================
+# Audio Unit / Plugin Build Artifacts
+# ============================================================
+
+*.component
+*.appex
+*.plugin
+*.dylib
+
+# Generated plugin staging/install directories
+dist/
+package/
+packages/
+staging/
+
+# ============================================================
+# C / C++ Build Artifacts
+# ============================================================
+
+*.o
+*.obj
+*.lo
+
+*.a
+*.lib
+
+*.so
+*.dll
+
+*.d
+*.dep
+
+*.out
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Debug symbols
+*.dSYM/
+*.dSYM.zip
+
+# ============================================================
+# CMake
+# ============================================================
+
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+
+compile_commands.json
+
+Testing/
+
+_build/
+cmake-build-*/
+
+# ============================================================
+# Ninja
+# ============================================================
+
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# ============================================================
+# Tests / Diagnostics
+# ============================================================
+
+test-results/
+coverage/
+logs/
+
+*.log
+
+# MIDI captures or generated diagnostic dumps
+*.midilog
+*.mididump
+*.trace
+
+# ============================================================
+# Temporary Files
+# ============================================================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+*~
+.#*
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+
+.vscode/
+.idea/
+
+# Keep project-level VS Code settings if intentionally added later:
+# !.vscode/
+# .vscode/*
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
+
+# ============================================================
+# clang tooling / analysis
+# ============================================================
+
+.cache/
+.clangd/
+
+# ============================================================
+# Local Configuration
+# ============================================================
+
+# Machine-specific MIDI device/config selections
+config.local.*
+*.local.ini
+*.local.json
+*.local.plist
+
+# Environment files
+.env
+.env.*
+
+# But permit a documented template
+!.env.example
+
+# ============================================================
+# Packaging / Archives
+# ============================================================
+
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# ============================================================
+# Miscellaneous
+# ============================================================
+
+Thumbs.db
+Desktop.ini
