@@ -5,6 +5,14 @@
 
 namespace cinemix {
 
+// Out-of-class definitions for the static constexpr data members (pre-C++17
+// ODR rule: required when a member is odr-used, e.g. kOscillatorStepPeriod is
+// bound to a const& by the duration comparison in stepTestMode).
+constexpr std::size_t AutomationEngine::kInboundQueueBytes;
+constexpr std::size_t AutomationEngine::kHostEventQueueCapacity;
+constexpr std::size_t AutomationEngine::kInboundDrainBatch;
+constexpr std::chrono::milliseconds AutomationEngine::kOscillatorStepPeriod;
+
 // ---------------------------------------------------------------------------
 // Construction / destruction
 
@@ -14,20 +22,23 @@ AutomationEngine::AutomationEngine(const MixerProfile& profile, Diagnostics& dia
       protocol_(profile), paramMap_(profile),
       scheduler_(profile, diag, transport),
       touchModes_(profile, protocol_, scheduler_),
-      animator_(profile.faderCount(), profile.muteCount()),
+      oscillator_(profile.faderCount()),
       listener_(nullptr),
       values_(new std::atomic<float>[profile.paramCount()]),
       lastProcessed_(profile.paramCount(), -1.f),
       lastCommanded_(profile.paramCount(), -1.f),
       touched_(profile.paramCount(), 0),
       activated_(false), testMode_(false), allMutes_(false),
-      inbound_(65536), inboundOverflowReported_(0),
-      hostEvents_(1024),
+      inbound_(kInboundQueueBytes),
+      hostEvents_(kHostEventQueueCapacity),
       stopRequested_(false), workerRunning_(false) {
-    for (size_t i = 0; i < profile_.paramCount(); ++i)
-        values_[i].store(paramMap_.info(ParamId(i)).defaultValue, std::memory_order_relaxed);
+    for (std::size_t i = 0; i < profile_.paramCount(); ++i)
+        values_[i].store(paramMap_.info(static_cast<ParamId>(i)).defaultValue,
+                         std::memory_order_relaxed);
 
-    transport_.onIncoming = [this](const uint8_t* data, size_t n) { handleIncoming(data, n); };
+    transport_.onIncoming = [this](const std::uint8_t* data, std::size_t size) {
+        handleIncoming(data, size);
+    };
 
     parser_.setHandlers(this, &AutomationEngine::parserCcCallback,
                         &AutomationEngine::parserSystemCallback,
@@ -39,9 +50,10 @@ AutomationEngine::~AutomationEngine() {
     // torn down in reverse declaration order); never call it from here.
     listener_ = nullptr;
 
-    // Safety net (legacy destructor behavior: always release the console).
+    // Safety net (legacy destructor behavior): always release the console.
     // If the worker is running, ask it to deactivate before stopping; if not,
-    // run the release sequence inline.
+    // run the release sequence inline. After this destructor returns, nothing
+    // runs and nothing sends.
     if (workerRunning_) {
         if (activated_.load(std::memory_order_acquire)) {
             std::lock_guard<std::mutex> lock(cmdMu_);
@@ -61,28 +73,29 @@ AutomationEngine::~AutomationEngine() {
 
 void AutomationEngine::setHostParameter(ParamId param, float value) {
     if (param >= paramMap_.size()) return;
-    values_[param].store(clamp01(value), std::memory_order_relaxed);
-    HostEvent ev;
-    ev.param = param;
-    ev.value = clamp01(value);
-    if (!hostEvents_.push(ev)) {
+    const float clamped = clamp01(value);
+    values_[param].store(clamped, std::memory_order_relaxed);
+    HostEvent event;
+    event.param = param;
+    event.value = clamped;
+    if (!hostEvents_.push(event)) {
         // Overflow: the newest value is still stored atomically, and the
         // worker re-reads values on drain, so only the event is lost.
         // Rate-limit the diagnostic.
-        if ((hostEvents_.overflowCount() & 0x3F) == 1)
+        if ((hostEvents_.overflowCount() & 0x3Fu) == 1)
             diag_.warning("host parameter queue overflow — updates may lag");
     }
 }
 
 float AutomationEngine::getParameter(ParamId param) const {
-    if (param >= paramMap_.size()) return 0.f;
+    if (param >= paramMap_.size()) return 0.0f;
     return values_[param].load(std::memory_order_relaxed);
 }
 
-void AutomationEngine::handleIncoming(const uint8_t* data, size_t n) {
-    for (size_t i = 0; i < n; ++i) {
+void AutomationEngine::handleIncoming(const std::uint8_t* data, std::size_t size) {
+    for (std::size_t i = 0; i < size; ++i) {
         if (!inbound_.push(data[i])) {
-            if ((inbound_.overflowCount() & 0x3FF) == 1)
+            if ((inbound_.overflowCount() & 0x3FFu) == 1)
                 diag_.warning("MIDI input queue overflow — console data lost");
         }
     }
@@ -119,9 +132,10 @@ void AutomationEngine::toggleAllMutes() {
     std::lock_guard<std::mutex> lock(cmdMu_);
     cmdQ_.push_back([this]() {
         allMutes_ = !allMutes_;
-        for (ParamId p = 0; p < paramMap_.size(); ++p) {
-            if (paramMap_.info(p).isMuteLike)
-                setParamInternal(p, allMutes_ ? 1.f : 0.f, Origin::UserInterface, true, true);
+        for (ParamId param = 0; param < paramMap_.size(); ++param) {
+            if (paramMap_.info(param).isMuteLike)
+                setParamInternal(param, allMutes_ ? 1.0f : 0.0f, Origin::UserInterface,
+                                 true, true);
         }
         diag_.info(allMutes_ ? "all mutes ON" : "all mutes OFF");
     });
@@ -179,14 +193,15 @@ bool AutomationEngine::processOnce() {
 // ---------------------------------------------------------------------------
 // Parser callbacks (called on the worker thread from processInbound)
 
-void AutomationEngine::parserCcCallback(void* user, uint8_t channel, uint8_t cc, uint8_t value) {
+void AutomationEngine::parserCcCallback(void* user, std::uint8_t channel, std::uint8_t cc,
+                                        std::uint8_t value) {
     AutomationEngine* self = static_cast<AutomationEngine*>(user);
-    const uint8_t status = uint8_t(0xB0u | ((channel - 1) & 0x0F));
-    const ConsoleEvent ev = self->protocol_.decode(status, cc, value);
-    self->handleConsoleEvent(ev);
+    const std::uint8_t status = static_cast<std::uint8_t>(0xB0u | ((channel - 1) & 0x0F));
+    const ConsoleEvent event = self->protocol_.decode(status, cc, value);
+    self->handleConsoleEvent(event);
 }
 
-void AutomationEngine::parserSystemCallback(void* user, uint8_t status) {
+void AutomationEngine::parserSystemCallback(void* user, std::uint8_t status) {
     AutomationEngine* self = static_cast<AutomationEngine*>(user);
     // A console never sends 0xFF (it is an input to the console), but if we
     // ever see one it means something downstream released remote mode.
@@ -204,17 +219,19 @@ void AutomationEngine::parserMalformedCallback(void* user) {
 // ---------------------------------------------------------------------------
 // Inbound console events
 
-void AutomationEngine::handleConsoleEvent(const ConsoleEvent& ev) {
-    if (ev.kind == EventKind::Unknown) {
-        if (static_cast<uint8_t>(diag_.level()) >= static_cast<uint8_t>(Diagnostics::Level::Verbose)) {
+void AutomationEngine::handleConsoleEvent(const ConsoleEvent& event) {
+    if (event.kind == EventKind::Unknown) {
+        if (static_cast<std::uint8_t>(diag_.level()) >=
+            static_cast<std::uint8_t>(Diagnostics::Level::Verbose)) {
             char buf[96];
             snprintf(buf, sizeof(buf), "unknown console CC: ch=%u cc=%u val=%u",
-                     unsigned(ev.channel), unsigned(ev.cc), unsigned(ev.value));
+                     static_cast<unsigned>(event.channel), static_cast<unsigned>(event.cc),
+                     static_cast<unsigned>(event.value));
             diag_.verbose(buf);
         }
         return;
     }
-    if (ev.kind == EventKind::Ignored) {
+    if (event.kind == EventKind::Ignored) {
         diag_.verbose("ignored console CC (protocol value not meaningful)");
         return;
     }
@@ -227,69 +244,84 @@ void AutomationEngine::handleConsoleEvent(const ConsoleEvent& ev) {
         return;
     }
 
+    // During Test Mode, console reports (motor echoes of the oscillator) must
+    // not leak into the host as user automation.
+    const bool testModeActive = testMode_.load(std::memory_order_acquire);
+
     ParamId param = kNoParam;
-    switch (ev.kind) {
+    switch (event.kind) {
     case EventKind::FaderPosition:
     case EventKind::MuteChanged: {
-        if (!paramMap_.find(ev.control, param)) { diag_.verbose("event for unmapped control"); return; }
-        const float v = (ev.kind == EventKind::FaderPosition) ? ev.normalized : (ev.on ? 1.f : 0.f);
+        if (!paramMap_.find(event.control, param)) {
+            diag_.verbose("event for unmapped control");
+            return;
+        }
+        const float value = (event.kind == EventKind::FaderPosition)
+                                ? event.normalized
+                                : (event.on ? 1.0f : 0.0f);
+        const bool notifyHost = !testModeActive;
         if (touched_[param]) {
             // A hand on the fader: user-originated. The hand beats the motor —
             // cancel whatever the host commanded and report to the host.
             cancelPending(param);
-            setParamInternal(param, v, Origin::Console, true, false);
+            setParamInternal(param, value, Origin::Console, notifyHost, false);
         } else if (scheduler_.hasPending(param)) {
             // We commanded a value that has not reached the wire yet; this
             // report reflects the *previous* state (motor still traveling).
             // Keep the pending target, update the visible state silently.
-            setParamInternal(param, v, Origin::Console, false, false);
-        } else if (isEcho(param, v)) {
+            setParamInternal(param, value, Origin::Console, false, false);
+        } else if (isEcho(param, value)) {
             // Console reporting near the position we commanded (motor echo /
             // interpolation jitter): update state silently, never bounce it
             // back to the host.
-            setParamInternal(param, v, Origin::Console, false, false);
+            setParamInternal(param, value, Origin::Console, false, false);
         } else {
             // Console moved without touch registering (hand move, master
             // fader, mutes): user-originated.
             cancelPending(param);
-            setParamInternal(param, v, Origin::Console, true, false);
+            setParamInternal(param, value, Origin::Console, notifyHost, false);
         }
         break;
     }
     case EventKind::TouchBegin: {
         // Touch sensors are not parameters; they gate the strip's fader.
-        const ParamId param = paramMap_.stripFaderId(ev.control.strip, ev.control.path);
-        if (param == kNoParam) return;
-        touched_[param] = 1;
-        if (listener_) listener_->onGesture(param, true);
-        touchModes_.onTouchChanged(ev.control.strip, ev.control.path, true);
+        const ParamId faderParam =
+            paramMap_.stripFaderId(event.control.strip, event.control.path);
+        if (faderParam == kNoParam) return;
+        touched_[faderParam] = 1;
+        if (listener_ && !testModeActive) listener_->onGesture(faderParam, true);
+        touchModes_.onTouchChanged(event.control.strip, event.control.path, true);
         break;
     }
     case EventKind::TouchEnd: {
-        const ParamId param = paramMap_.stripFaderId(ev.control.strip, ev.control.path);
-        if (param == kNoParam) return;
-        touched_[param] = 0;
-        if (listener_) listener_->onGesture(param, false);
-        touchModes_.onTouchChanged(ev.control.strip, ev.control.path, false);
+        const ParamId faderParam =
+            paramMap_.stripFaderId(event.control.strip, event.control.path);
+        if (faderParam == kNoParam) return;
+        touched_[faderParam] = 0;
+        if (listener_ && !testModeActive) listener_->onGesture(faderParam, false);
+        touchModes_.onTouchChanged(event.control.strip, event.control.path, false);
         break;
     }
     case EventKind::SelPressed:
-        touchModes_.onSelPressed(ev.control.strip, ev.control.path);
+        touchModes_.onSelPressed(event.control.strip, event.control.path);
         break;
     case EventKind::MasterSelPressed:
         touchModes_.onMasterSelPressed();
         break;
     case EventKind::AuxMuteChanged: {
-        ControlRef ref = ev.control;
-        if (!paramMap_.find(ref, param)) { diag_.verbose("AUX event for unmapped control"); return; }
-        const float v = ev.on ? 1.f : 0.f;
+        ControlRef reference = event.control;
+        if (!paramMap_.find(reference, param)) {
+            diag_.verbose("AUX event for unmapped control");
+            return;
+        }
+        const float value = event.on ? 1.0f : 0.0f;
         if (scheduler_.hasPending(param))
-            setParamInternal(param, v, Origin::Console, false, false);
-        else if (isEcho(param, v))
-            setParamInternal(param, v, Origin::Console, false, false);
+            setParamInternal(param, value, Origin::Console, false, false);
+        else if (isEcho(param, value))
+            setParamInternal(param, value, Origin::Console, false, false);
         else {
             cancelPending(param);
-            setParamInternal(param, v, Origin::Console, true, false);
+            setParamInternal(param, value, Origin::Console, !testModeActive, false);
         }
         break;
     }
@@ -304,10 +336,10 @@ void AutomationEngine::handleConsoleEvent(const ConsoleEvent& ev) {
 void AutomationEngine::setParamInternal(ParamId param, float value, Origin origin,
                                         bool notify, bool sendOutbound) {
     if (param >= paramMap_.size()) return;
-    const float v = clamp01(value);
-    const float prevProcessed = lastProcessed_[param];
-    values_[param].store(v, std::memory_order_relaxed);
-    lastProcessed_[param] = v; // legacy prev_CC_Val: updated on every processed value
+    const float clamped = clamp01(value);
+    const float previousProcessed = lastProcessed_[param];
+    values_[param].store(clamped, std::memory_order_relaxed);
+    lastProcessed_[param] = clamped; // legacy prev_CC_Val: updated on every processed value
     if (sendOutbound) {
         if (activated_.load(std::memory_order_acquire)) {
             // Legacy dedupe semantics: skip when the value did not change
@@ -315,52 +347,54 @@ void AutomationEngine::setParamInternal(ParamId param, float value, Origin origi
             // the parameter domain, not the wire byte (mute 2/3, AUX 2n/2n+1
             // encodings make wire-byte dedupe wrong).
             const bool sameValue =
-                (prevProcessed >= 0.f) &&
-                (paramMap_.info(param).isMuteLike ? ((v != 0.f) == (prevProcessed != 0.f))
-                                                 : (quantize7(v) == quantize7(prevProcessed)));
+                (previousProcessed >= 0.0f) &&
+                (paramMap_.info(param).isMuteLike
+                     ? ((clamped != 0.0f) == (previousProcessed != 0.0f))
+                     : (quantize7(clamped) == quantize7(previousProcessed)));
             if (!sameValue) {
-                enqueueOutbound(param, v);
-                lastCommanded_[param] = v;
+                enqueueOutbound(param, clamped);
+                lastCommanded_[param] = clamped;
             }
         }
     }
-    if (notify && listener_) listener_->onParameter(param, v, origin);
+    if (notify && listener_) listener_->onParameter(param, clamped, origin);
 }
 
 void AutomationEngine::enqueueOutbound(ParamId param, float value) {
     const ParameterInfo& info = paramMap_.info(param);
-    const ControlRef& c = info.control;
-    switch (c.cls) {
+    const ControlRef& control = info.control;
+    switch (control.cls) {
     case ControlClass::Fader: {
-        const std::vector<MidiMessage> msgs =
-            protocol_.encodeStripFader(c.strip, c.path, value);
-        if (!msgs.empty()) {
-            scheduler_.enqueuePosition(param, msgs[0]);
+        const std::vector<MidiMessage> messages =
+            protocol_.encodeStripFader(control.strip, control.path, value);
+        if (!messages.empty()) {
+            scheduler_.enqueuePosition(param, messages[0]);
             // 14-bit mode sends a fine CC as well; append it without
             // coalescing (it must not be dropped when a newer MSB arrives).
-            for (size_t i = 1; i < msgs.size(); ++i) {
-                OutboundCommand cmd;
-                cmd.kind = CommandKind::SetMode;
-                cmd.message = msgs[i];
-                cmd.param = kNoParam;
-                scheduler_.enqueueCommand(cmd);
+            for (std::size_t i = 1; i < messages.size(); ++i) {
+                OutboundCommand command;
+                command.kind = CommandKind::SetMode;
+                command.message = messages[i];
+                command.param = kNoParam;
+                scheduler_.enqueueCommand(command);
             }
         }
         break;
     }
     case ControlClass::Mute:
         scheduler_.enqueuePosition(param,
-            protocol_.encodeStripMute(c.strip, c.path, value != 0.f));
+            protocol_.encodeStripMute(control.strip, control.path, value != 0.0f));
         break;
     case ControlClass::JoyAxis:
         scheduler_.enqueuePosition(param,
-            protocol_.encodeJoyAxis(c.index, c.path == StripPath::Chan ? 0 : 1, value));
+            protocol_.encodeJoyAxis(control.index,
+                                    control.path == StripPath::Chan ? 0 : 1, value));
         break;
     case ControlClass::JoyMute:
-        scheduler_.enqueuePosition(param, protocol_.encodeJoyMute(c.index, value != 0.f));
+        scheduler_.enqueuePosition(param, protocol_.encodeJoyMute(control.index, value != 0.0f));
         break;
     case ControlClass::AuxMute:
-        scheduler_.enqueuePosition(param, protocol_.encodeAuxMute(c.index, value != 0.f));
+        scheduler_.enqueuePosition(param, protocol_.encodeAuxMute(control.index, value != 0.0f));
         break;
     case ControlClass::MasterFader:
         scheduler_.enqueuePosition(param, protocol_.encodeMasterFader(value));
@@ -374,9 +408,10 @@ void AutomationEngine::enqueueOutbound(ParamId param, float value) {
 bool AutomationEngine::isEcho(ParamId param, float incoming) const {
     if (param >= lastCommanded_.size()) return false;
     const float baseline = lastCommanded_[param];
-    if (baseline < 0.f) return false; // we never commanded this control
+    if (baseline < 0.0f) return false; // we never commanded this control
     if (paramMap_.info(param).isMuteLike) return incoming == baseline;
-    const float window = float(profile_.echoHysteresisSteps) * faderHysteresis();
+    const float window =
+        static_cast<float>(profile_.echoHysteresisSteps) * faderHysteresis();
     return std::fabs(incoming - baseline) <= window + 1e-6f;
 }
 
@@ -388,14 +423,14 @@ void AutomationEngine::cancelPending(ParamId param) {
 // Command implementations (worker thread)
 
 void AutomationEngine::snapshotInternal(Origin origin) {
-    for (ParamId p = 0; p < paramMap_.size(); ++p) {
-        const float v = values_[p].load(std::memory_order_relaxed);
+    for (ParamId param = 0; param < paramMap_.size(); ++param) {
+        const float value = values_[param].load(std::memory_order_relaxed);
         // Legacy: SendSnapshot resets the dedupe cache and re-sends every
         // parameter; the sent values become the new dedupe/echo references.
-        lastProcessed_[p] = v;
-        lastCommanded_[p] = v;
-        if (activated_.load(std::memory_order_acquire)) enqueueOutbound(p, v);
-        if (listener_) listener_->onParameter(p, v, origin);
+        lastProcessed_[param] = value;
+        lastCommanded_[param] = value;
+        if (activated_.load(std::memory_order_acquire)) enqueueOutbound(param, value);
+        if (listener_) listener_->onParameter(param, value, origin);
     }
     diag_.info("snapshot sent");
 }
@@ -404,9 +439,9 @@ void AutomationEngine::resetAllInternal() {
     touchModes_.setAllStripModes(3);
     touchModes_.setMasterMode(3);
     touchModes_.setJoystickModes(3);
-    for (ParamId p = 0; p < paramMap_.size(); ++p) {
-        const bool isMaster = paramMap_.info(p).control.cls == ControlClass::MasterFader;
-        values_[p].store(isMaster ? 1.f : 0.f, std::memory_order_relaxed);
+    for (ParamId param = 0; param < paramMap_.size(); ++param) {
+        const bool isMaster = paramMap_.info(param).control.cls == ControlClass::MasterFader;
+        values_[param].store(isMaster ? 1.0f : 0.0f, std::memory_order_relaxed);
     }
     allMutes_ = false;
     snapshotInternal(Origin::UserInterface);
@@ -423,11 +458,11 @@ void AutomationEngine::activateInternal() {
 
     // Legacy activation sequence, byte-for-byte (docs/COMPATIBILITY.md §1):
     // remote mode → everything to WRITE → snapshot → everything to AUTO.
-    OutboundCommand cmd;
-    cmd.kind = CommandKind::RemoteControl;
-    cmd.message = protocol_.remoteControl(true);
-    cmd.param = kNoParam;
-    scheduler_.enqueueCommand(cmd);
+    OutboundCommand command;
+    command.kind = CommandKind::RemoteControl;
+    command.message = protocol_.remoteControl(true);
+    command.param = kNoParam;
+    scheduler_.enqueueCommand(command);
 
     touchModes_.setAllStripModes(2);
     touchModes_.setMasterMode(2);
@@ -447,28 +482,36 @@ void AutomationEngine::activateInternal() {
 void AutomationEngine::deactivateInternal() {
     diag_.info("deactivating console (releasing remote control mode)");
 
+    // Test Mode must not outlive the console link: stop the oscillator before
+    // the mode sweep overwrites everything with ISO(0).
+    if (testMode_.load(std::memory_order_acquire)) {
+        testMode_.store(false, std::memory_order_release);
+        savedStripModes_.clear();
+        diag_.info("test mode stopped (console released)");
+    }
+
     // Legacy deactivation sequence, byte-for-byte: CC127=0 → everything to
     // ISO(0) → master/joystick SEL 0 → system reset 0xFF. Position data
     // pending in the queue is canceled so nothing is sent after the reset.
-    OutboundCommand cmd;
-    cmd.kind = CommandKind::RemoteControl;
-    cmd.message = protocol_.remoteControl(false);
-    cmd.param = kNoParam;
-    scheduler_.enqueueCommand(cmd);
+    OutboundCommand command;
+    command.kind = CommandKind::RemoteControl;
+    command.message = protocol_.remoteControl(false);
+    command.param = kNoParam;
+    scheduler_.enqueueCommand(command);
 
     touchModes_.setAllStripModes(0);
     touchModes_.setMasterMode(0);
     touchModes_.setJoystickModes(0);
 
-    cmd.kind = CommandKind::SystemReset;
-    cmd.message = protocol_.systemReset();
-    scheduler_.enqueueCommand(cmd);
+    command.kind = CommandKind::SystemReset;
+    command.message = protocol_.systemReset();
+    scheduler_.enqueueCommand(command);
     scheduler_.cancelAllPositions();
 
-    for (size_t p = 0; p < touched_.size(); ++p) {
-        if (touched_[p]) {
-            touched_[p] = 0;
-            if (listener_) listener_->onGesture(ParamId(p), false);
+    for (std::size_t param = 0; param < touched_.size(); ++param) {
+        if (touched_[param]) {
+            touched_[param] = 0;
+            if (listener_) listener_->onGesture(static_cast<ParamId>(param), false);
         }
     }
     activated_.store(false, std::memory_order_release);
@@ -477,10 +520,35 @@ void AutomationEngine::deactivateInternal() {
 }
 
 void AutomationEngine::testModeInternal(bool on) {
-    resetAllInternal();
-    touchModes_.setAllStripModes(on ? 1 : 3);
-    testMode_.store(on, std::memory_order_release);
-    diag_.info(on ? "test mode ON" : "test mode OFF");
+    if (on) {
+        if (!activated_.load(std::memory_order_acquire)) {
+            diag_.warning("test mode requires an activated console");
+            return;
+        }
+        if (testMode_.load(std::memory_order_acquire)) return;
+
+        // Move strip modes to READ(1) for the duration: the console follows
+        // incoming positions but its touch→WRITE gating is disabled (the
+        // legacy bridge used READ for its fader test for the same reason).
+        // Modes are restored on exit. Nothing else is touched: no reset, no
+        // snapshot, no mutes.
+        savedStripModes_ = touchModes_.allStripModes();
+        touchModes_.setAllStripModes(1);
+        testStart_ = std::chrono::steady_clock::now();
+        lastOscillatorStep_ = testStart_;
+        testMode_.store(true, std::memory_order_release);
+        diag_.info("test mode ON (fader oscillator)");
+    } else {
+        if (!testMode_.load(std::memory_order_acquire)) return;
+        testMode_.store(false, std::memory_order_release);
+        touchModes_.restoreAllStripModes(savedStripModes_);
+        savedStripModes_.clear();
+        // Immediate stop: drop everything still queued for the console; the
+        // oscillator never writes again and host automation re-queues its
+        // values on its own cadence.
+        scheduler_.cancelAllPositions();
+        diag_.info("test mode OFF (modes restored)");
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -519,7 +587,7 @@ void AutomationEngine::workerLoop() {
 
 void AutomationEngine::processCommands(std::unique_lock<std::mutex>& lock) {
     // `lock` is held by contract (worker loop or drainNow).
-    (void)lock;
+    static_cast<void>(lock);
     while (!cmdQ_.empty()) {
         std::function<void()> fn = std::move(cmdQ_.front());
         cmdQ_.pop_front();
@@ -528,40 +596,39 @@ void AutomationEngine::processCommands(std::unique_lock<std::mutex>& lock) {
 }
 
 void AutomationEngine::processInbound() {
-    MidiByte buf[512];
-    size_t n = 0;
-    while ((n = inbound_.popBulk(buf, 512)) > 0) {
-        parser_.feed(buf, n);
+    // Stack batch buffer: the drain is a hot path, and a fixed-size batch
+    // avoids per-drain allocation (justified raw array, brief §5).
+    MidiByte buffer[kInboundDrainBatch];
+    std::size_t count = 0;
+    while ((count = inbound_.popBulk(buffer, kInboundDrainBatch)) > 0) {
+        parser_.feed(buffer, count);
     }
 }
 
 void AutomationEngine::processHostEvents() {
-    HostEvent ev;
-    while (hostEvents_.pop(ev)) {
+    HostEvent event;
+    while (hostEvents_.pop(event)) {
         // Re-read the atomic (a newer write may have replaced the queued
         // value): latest wins, matching the coalescing philosophy.
-        const float v = values_[ev.param].load(std::memory_order_relaxed);
-        setParamInternal(ev.param, v, Origin::Host, false, true);
+        const float value = values_[event.param].load(std::memory_order_relaxed);
+        setParamInternal(event.param, value, Origin::Host, false, true);
     }
 }
 
 void AutomationEngine::stepTestMode() {
-    std::vector<std::pair<size_t, float> > faderUpdates;
-    std::vector<std::pair<size_t, bool> > muteUpdates;
-    animator_.step(faderUpdates, muteUpdates);
-    for (size_t i = 0; i < faderUpdates.size(); ++i) {
-        const size_t strip = faderUpdates[i].first / 2;
-        const StripPath path = (faderUpdates[i].first % 2 == 0) ? StripPath::Chan : StripPath::Mix;
-        const ParamId p = paramMap_.stripFaderId(uint16_t(strip), path);
-        if (p != kNoParam)
-            setParamInternal(p, faderUpdates[i].second, Origin::Internal, false, true);
-    }
-    for (size_t i = 0; i < muteUpdates.size(); ++i) {
-        const size_t strip = muteUpdates[i].first / 2;
-        const StripPath path = (muteUpdates[i].first % 2 == 0) ? StripPath::Chan : StripPath::Mix;
-        const ParamId p = paramMap_.stripMuteId(uint16_t(strip), path);
-        if (p != kNoParam)
-            setParamInternal(p, muteUpdates[i].second ? 1.f : 0.f, Origin::Internal, false, true);
+    if (!testMode_.load(std::memory_order_acquire)) return;
+    const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    if (now - lastOscillatorStep_ < kOscillatorStepPeriod) return;
+    lastOscillatorStep_ = now;
+
+    const double elapsed =
+        std::chrono::duration_cast<std::chrono::duration<double> >(now - testStart_).count();
+    // Faders only — Test Mode never touches mutes or other controls.
+    for (ParamId param = 0; param < profile_.faderCount(); ++param) {
+        const float value = oscillator_.valueAt(elapsed, param);
+        // notify=false: test motion is never user automation. The normal
+        // dedupe + scheduler path applies (bandwidth respected).
+        setParamInternal(param, value, Origin::Internal, false, true);
     }
 }
 

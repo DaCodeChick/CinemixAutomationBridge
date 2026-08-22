@@ -147,7 +147,7 @@ bool CoreMidiTransport::sendTo(MIDIEndpointRef dest, MIDIPortRef port,
     MIDIPacketList pktlist;
     MIDIPacket* pkt = MIDIPacketListInit(&pktlist);
     pkt = MIDIPacketListAdd(&pktlist, sizeof(pktlist), pkt, 0,
-                            message.length, message.data);
+                            message.length, message.data.data());
     if (!pkt) return false;
     return MIDISend(port, dest, &pktlist) == noErr;
 }

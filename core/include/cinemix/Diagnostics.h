@@ -12,7 +12,7 @@ namespace cinemix {
 
 class Diagnostics {
 public:
-    enum class Level : uint8_t {
+    enum class Level : std::uint8_t {
         Error = 0,   // always on
         Warning = 1, // always on unless silenced
         Info = 2,    // lifecycle: activation, port state
@@ -21,7 +21,7 @@ public:
         MidiOut = 5, // every outbound message (raw bytes)
     };
 
-    typedef std::function<void(Level, const std::string&)> Sink;
+    using Sink = std::function<void(Level, const std::string&)>;
 
     Diagnostics() : level_(Level::Info) {}
 
@@ -29,11 +29,11 @@ public:
         std::lock_guard<std::mutex> lock(mu_);
         sink_ = sink;
     }
-    void setLevel(Level l) { level_.store(l, std::memory_order_relaxed); }
-    Level level() const { return level_.load(std::memory_order_relaxed); }
+    void setLevel(Level level) noexcept { level_.store(level, std::memory_order_relaxed); }
+    Level level() const noexcept { return level_.load(std::memory_order_relaxed); }
 
-    static const char* levelName(Level l) {
-        switch (l) {
+    static constexpr const char* levelName(Level level) noexcept {
+        switch (level) {
         case Level::Error: return "error";
         case Level::Warning: return "warning";
         case Level::Info: return "info";
@@ -46,18 +46,18 @@ public:
 
     // The real-time safety rule: log() may lock briefly and may call into the
     // sink; only call from non-audio threads.
-    void log(Level l, const std::string& message) {
-        if (static_cast<uint8_t>(l) > static_cast<uint8_t>(level())) return;
+    void log(Level severity, const std::string& message) {
+        if (static_cast<std::uint8_t>(severity) > static_cast<std::uint8_t>(level())) return;
         std::lock_guard<std::mutex> lock(mu_);
-        if (sink_) sink_(l, message);
+        if (sink_) sink_(severity, message);
     }
 
-    void error(const std::string& m) { log(Level::Error, m); }
-    void warning(const std::string& m) { log(Level::Warning, m); }
-    void info(const std::string& m) { log(Level::Info, m); }
-    void verbose(const std::string& m) { log(Level::Verbose, m); }
-    void midiIn(const std::string& m) { log(Level::MidiIn, m); }
-    void midiOut(const std::string& m) { log(Level::MidiOut, m); }
+    void error(const std::string& message) { log(Level::Error, message); }
+    void warning(const std::string& message) { log(Level::Warning, message); }
+    void info(const std::string& message) { log(Level::Info, message); }
+    void verbose(const std::string& message) { log(Level::Verbose, message); }
+    void midiIn(const std::string& message) { log(Level::MidiIn, message); }
+    void midiOut(const std::string& message) { log(Level::MidiOut, message); }
 
 private:
     std::atomic<Level> level_;

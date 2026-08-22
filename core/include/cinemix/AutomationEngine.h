@@ -6,19 +6,29 @@
 //     safe (lock-free pushes / atomic loads) and may be called from any
 //     thread (Logic's audio thread, CoreMIDI's read proc).
 //   * Everything else runs on the bridge worker thread (`start()`), which
-//     owns the scheduler, touch modes, test animation and all console I/O.
+//     owns the scheduler, touch modes, test mode and all console I/O.
 //   * UI-facing commands (`activate`, …) marshal onto the worker through a
 //     mutex/condvar queue.
 //
-// Destruction contract (safety-critical, matches the legacy plugin's
-// destructor): the owner MUST call `deactivate()` (or `stop()` after having
-// called it) before tearing the engine down, so the console is released from
-// remote-control mode with the full legacy deactivation sequence.
+// Lifecycle contract (authoritative):
+//   * `deactivate()` releases the console with the full legacy sequence
+//     (CC127=0 → modes to ISO → master/joystick SEL 0 → 0xFF, positions
+//     canceled). Call it explicitly for orderly teardown — the UI's
+//     Deactivate button, the AU's disposal path and the destructor all use it.
+//   * The DESTRUCTOR is the safety net: if the console is still in remote
+//     mode it runs the same release sequence (on the worker if it is
+//     running, inline otherwise) before anything else is torn down. Explicit
+//     deactivation is therefore recommended but never required for safety.
+//   * `stop()` drains queued work (including a pending deactivation) and
+//     joins the worker; after destruction nothing runs, nothing sends, and
+//     the transport's inbound handler is detached before return.
 #ifndef CINEMIX_AUTOMATION_ENGINE_H
 #define CINEMIX_AUTOMATION_ENGINE_H
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -28,12 +38,12 @@
 
 #include "cinemix/CinemixProtocol.h"
 #include "cinemix/Diagnostics.h"
+#include "cinemix/FaderOscillator.h"
 #include "cinemix/MidiParser.h"
 #include "cinemix/MidiTransport.h"
 #include "cinemix/MixerProfile.h"
 #include "cinemix/ParameterMap.h"
 #include "cinemix/RingBuffer.h"
-#include "cinemix/TestModeAnimator.h"
 #include "cinemix/TouchModeTracker.h"
 #include "cinemix/TransmissionScheduler.h"
 #include "cinemix/Types.h"
@@ -56,7 +66,7 @@ public:
     };
 
     AutomationEngine(const MixerProfile& profile, Diagnostics& diag, IMidiTransport& transport);
-    ~AutomationEngine(); // stops the worker; does NOT deactivate (caller's duty first)
+    ~AutomationEngine(); // safety net: releases the console, then stops everything
 
     AutomationEngine(const AutomationEngine&) = delete;
     AutomationEngine& operator=(const AutomationEngine&) = delete;
@@ -66,10 +76,10 @@ public:
     // ---- Host-facing, real-time safe --------------------------------------
     void setHostParameter(ParamId param, float value);
     float getParameter(ParamId param) const;
-    size_t parameterCount() const { return paramMap_.size(); }
+    std::size_t parameterCount() const { return paramMap_.size(); }
 
     // ---- Transport-facing, real-time safe ---------------------------------
-    void handleIncoming(const uint8_t* data, size_t n);
+    void handleIncoming(const std::uint8_t* data, std::size_t size);
 
     // ---- UI-facing commands (marshaled to the worker) ---------------------
     void activate();
@@ -109,12 +119,22 @@ private:
         float value;
     };
 
-    static void parserCcCallback(void* user, uint8_t channel, uint8_t cc, uint8_t value);
-    static void parserSystemCallback(void* user, uint8_t status);
+    // Queue geometry (documented bounds; overflow is counted, never fatal).
+    static constexpr std::size_t kInboundQueueBytes = 65536;
+    static constexpr std::size_t kHostEventQueueCapacity = 1024;
+    static constexpr std::size_t kInboundDrainBatch = 512;
+    // Test-mode oscillator recomputation throttle: 20 Hz is plenty for a
+    // 12-second wave; the scheduler coalesces anything beyond the budget.
+    static constexpr std::chrono::milliseconds kOscillatorStepPeriod{50};
+
+    static void parserCcCallback(void* user, std::uint8_t channel, std::uint8_t cc,
+                                 std::uint8_t value);
+    static void parserSystemCallback(void* user, std::uint8_t status);
     static void parserMalformedCallback(void* user);
 
-    void handleConsoleEvent(const ConsoleEvent& ev);
-    void setParamInternal(ParamId param, float value, Origin origin, bool notify, bool sendOutbound);
+    void handleConsoleEvent(const ConsoleEvent& event);
+    void setParamInternal(ParamId param, float value, Origin origin, bool notify,
+                          bool sendOutbound);
     void enqueueOutbound(ParamId param, float value);
     void snapshotInternal(Origin origin);
     void resetAllInternal();
@@ -137,7 +157,7 @@ private:
     ParameterMap paramMap_;
     TransmissionScheduler scheduler_;
     TouchModeTracker touchModes_;
-    TestModeAnimator animator_;
+    FaderOscillator oscillator_;
     MidiParser parser_;
     Listener* listener_;
 
@@ -149,15 +169,19 @@ private:
     // echo-suppression baseline; -1 = never commanded.
     std::vector<float> lastProcessed_;
     std::vector<float> lastCommanded_;
-    std::vector<uint8_t> touched_;    // worker-only: console touch state per param
+    std::vector<std::uint8_t> touched_; // worker-only: console touch state per param
 
     std::atomic<bool> activated_;
     std::atomic<bool> testMode_;
     bool allMutes_; // worker-only
 
+    // Test mode state (worker-only).
+    std::vector<std::uint8_t> savedStripModes_;
+    std::chrono::steady_clock::time_point testStart_;
+    std::chrono::steady_clock::time_point lastOscillatorStep_;
+
     // Inbound (transport → worker).
     SpScRingBuffer<MidiByte> inbound_;
-    std::atomic<size_t> inboundOverflowReported_;
 
     // Host parameter writes (audio thread → worker).
     SpScRingBuffer<HostEvent> hostEvents_;

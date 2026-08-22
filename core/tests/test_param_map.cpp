@@ -11,39 +11,39 @@ TEST_CASE("param map: default profile reproduces legacy 0..160 layout") {
     MixerProfile prof = MixerProfile::legacyDefault();
     ParameterMap map(prof);
 
-    CHECK_EQ(map.size(), size_t(161));
+    CHECK_EQ(map.size(), static_cast<size_t>(161));
 
     // Faders 0..71.
-    CHECK_EQ(int(map.stripFaderId(0, StripPath::Chan)), 0);
-    CHECK_EQ(int(map.stripFaderId(0, StripPath::Mix)), 1);
-    CHECK_EQ(int(map.stripFaderId(23, StripPath::Mix)), 47);
-    CHECK_EQ(int(map.stripFaderId(24, StripPath::Chan)), 48);
-    CHECK_EQ(int(map.stripFaderId(35, StripPath::Mix)), 71);
+    CHECK_EQ(static_cast<int>(map.stripFaderId(0, StripPath::Chan)), 0);
+    CHECK_EQ(static_cast<int>(map.stripFaderId(0, StripPath::Mix)), 1);
+    CHECK_EQ(static_cast<int>(map.stripFaderId(23, StripPath::Mix)), 47);
+    CHECK_EQ(static_cast<int>(map.stripFaderId(24, StripPath::Chan)), 48);
+    CHECK_EQ(static_cast<int>(map.stripFaderId(35, StripPath::Mix)), 71);
 
     // Mutes 72..143.
-    CHECK_EQ(int(map.stripMuteId(0, StripPath::Chan)), 72);
-    CHECK_EQ(int(map.stripMuteId(0, StripPath::Mix)), 73);
-    CHECK_EQ(int(map.stripMuteId(23, StripPath::Mix)), 119);
-    CHECK_EQ(int(map.stripMuteId(24, StripPath::Chan)), 120);
-    CHECK_EQ(int(map.stripMuteId(35, StripPath::Mix)), 143);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(0, StripPath::Chan)), 72);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(0, StripPath::Mix)), 73);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(23, StripPath::Mix)), 119);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(24, StripPath::Chan)), 120);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(35, StripPath::Mix)), 143);
 
     // AUX 144..153.
     CHECK(map.info(144).control.cls == ControlClass::AuxMute);
-    CHECK_EQ(int(map.info(144).control.index), 0);
-    CHECK_EQ(int(map.info(153).control.index), 9);
+    CHECK_EQ(static_cast<int>(map.info(144).control.index), 0);
+    CHECK_EQ(static_cast<int>(map.info(153).control.index), 9);
 
     // Joysticks 154..159 (legacy order: X, Y, Mute per joystick).
     CHECK(map.info(154).control.cls == ControlClass::JoyAxis);
-    CHECK_EQ(int(map.info(154).control.index), 0);
+    CHECK_EQ(static_cast<int>(map.info(154).control.index), 0);
     CHECK(map.info(154).control.path == StripPath::Chan); // X
     CHECK(map.info(155).control.path == StripPath::Mix);  // Y
     CHECK(map.info(156).control.cls == ControlClass::JoyMute);
-    CHECK_EQ(int(map.info(156).control.index), 0);
+    CHECK_EQ(static_cast<int>(map.info(156).control.index), 0);
     CHECK(map.info(157).control.cls == ControlClass::JoyAxis);
-    CHECK_EQ(int(map.info(157).control.index), 1);
+    CHECK_EQ(static_cast<int>(map.info(157).control.index), 1);
     CHECK(map.info(158).control.path == StripPath::Mix);
     CHECK(map.info(159).control.cls == ControlClass::JoyMute);
-    CHECK_EQ(int(map.info(159).control.index), 1);
+    CHECK_EQ(static_cast<int>(map.info(159).control.index), 1);
 
     // Master fader 160, default 1.0 (legacy default: master at maximum).
     CHECK(map.info(160).control.cls == ControlClass::MasterFader);
@@ -73,7 +73,7 @@ TEST_CASE("param map: strip labels — mono numbering skips stereo strips") {
     // Reverse lookup.
     ParamId id = kNoParam;
     CHECK(map.find(ControlRef(ControlClass::MasterFader, 0, StripPath::Chan, 0), id));
-    CHECK_EQ(int(id), 160);
+    CHECK_EQ(static_cast<int>(id), 160);
     CHECK(!map.find(ControlRef(ControlClass::Touch, 0, StripPath::Chan, 0), id));
 }
 
@@ -82,9 +82,9 @@ TEST_CASE("param map: alternate profile (LO24/HI8) shifts master section") {
     ParameterMap map(prof);
 
     // 32 strips: 64 faders + 64 mutes + 10 aux + 6 joystick + 1 master = 145.
-    CHECK_EQ(map.size(), size_t(145));
-    CHECK_EQ(int(map.info(144).id), 144);
-    CHECK_EQ(int(map.stripMuteId(31, StripPath::Mix)), 127);
+    CHECK_EQ(map.size(), static_cast<size_t>(145));
+    CHECK_EQ(static_cast<int>(map.info(144).id), 144);
+    CHECK_EQ(static_cast<int>(map.stripMuteId(31, StripPath::Mix)), 127);
     CHECK(map.info(128).control.cls == ControlClass::AuxMute);
     CHECK(map.info(138).control.cls == ControlClass::JoyAxis); // Joy 1 X
     CHECK(map.info(144).control.cls == ControlClass::MasterFader);
@@ -96,8 +96,8 @@ TEST_CASE("param map: profile without joysticks/aux/master") {
     prof.auxMuteCount = 0;
     prof.hasMasterFader = false;
     ParameterMap map(prof);
-    CHECK_EQ(map.size(), size_t(64 + 64));
-    CHECK_EQ(int(map.stripMuteId(31, StripPath::Mix)), 127);
+    CHECK_EQ(map.size(), static_cast<size_t>(64 + 64));
+    CHECK_EQ(static_cast<int>(map.stripMuteId(31, StripPath::Mix)), 127);
 }
 
 } // namespace

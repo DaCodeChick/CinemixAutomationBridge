@@ -1,9 +1,15 @@
 # Notices and third-party material
 
-## This project
+## This project (first-party code)
 
-The Cinemix Automation Bridge (this repository, excluding the items below) is
-licensed under the GPLv3 License (see LICENSE).
+The Cinemix Automation Bridge — everything in this repository except the
+items explicitly listed below — is licensed under the **GNU General Public
+License version 3** (see LICENSE, the GPLv3 text).
+
+**License-version note:** the repository establishes GPLv3 as the license but
+does not currently state whether that means GPL-3.0-only or
+GPL-3.0-or-later. That choice is intentionally left to the project maintainer
+and is not assumed here.
 
 ## Legacy bridge (protocol knowledge and behavioral reference)
 
@@ -23,12 +29,14 @@ Cinemix are not affiliated with this project.
 [AudioUnitSDK](https://github.com/apple/AudioUnitSDK) (the classic initial
 2020 release, which targets macOS 10.9+), used **unmodified** to provide the
 AUBase component scaffolding for the AUv2 target. It is licensed under the
-Apache License 2.0; see `mac/vendor/AudioUnitSDK/LICENSE.txt`.
+**Apache License 2.0** — see `mac/vendor/AudioUnitSDK/LICENSE.txt`.
 Copyright © 2000–2021 Apple Inc. All rights reserved.
+The vendored code is third-party material and is not covered by this
+project's GPLv3 license; its own license and notices remain in force.
 
 ## Dependencies
 
 None beyond the system frameworks (AudioToolbox, AudioUnit, CoreAudio,
-CoreMIDI, Cocoa, CoreAudioKit, Foundation) and the C++11 standard library
+CoreMIDI, Cocoa, CoreAudioKit, Foundation) and the C++14 standard library
 for the portable core. No third-party plugin frameworks are used
 (brief §18).

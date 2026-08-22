@@ -4,16 +4,19 @@
 
 | Component | Language | Standard | Builds on | Status |
 | --- | --- | --- | --- | --- |
-| `core/` (portable Cinemix core) | C++11 | C++11 | Linux/macOS | **built and tested on Linux (63 test cases)** |
-| `tools/cinemix_harness` | C++11 | C++11 | Linux/macOS | **built and tested on Linux** |
-| `mac/` AUv2 + CoreMIDI + AppKit | ObjC++/C++17 | gnu++17 | macOS only | **implemented; compile/validate on the target Mac** |
+| `core/` (portable Cinemix core) | C++14 | C++14 | Linux/macOS | **built and tested on Linux (75 test cases)** |
+| `tools/cinemix_harness` | C++14 | C++14 | Linux/macOS | **built and tested on Linux** |
+| `mac/` AUv2 component (includes SDK headers) | ObjC++ | gnu++17 | macOS only | **implemented; compile/validate on the target Mac** |
+| `mac/` CoreMIDI/Config/AppKit glue | ObjC++ | C++14 | macOS only | **implemented; compile/validate on the target Mac** |
 | `mac/vendor/AudioUnitSDK` (Apple, Apache-2.0) | C++17 | gnu++17 | macOS only | vendored from Apple's initial 2020 release (targets macOS 10.9+) |
 
-The language split is intentional: the portable core stays conservative C++11
-(brief §6); the vendored Apple SDK requires C++17 *as published by Apple*
-(plus a C99 designated-initializer extension that Apple clang accepts in
-`gnu++17` mode), and the thin Objective-C++ glue follows it. Nothing in the
-core depends on anything Apple-specific.
+The language split is intentional (brief §22): first-party code — the
+portable core, the harness and the CoreMIDI/AppKit/Config glue — is
+conservative **C++14**. Only the vendored Apple SDK and the AU component that
+includes its headers compile as gnu++17 (the SDK requires C++17 *as published
+by Apple*, plus a C99 designated-initializer extension Apple clang accepts in
+GNU mode). The core is never raised to C++17 because of the vendor; nothing
+in it depends on anything Apple-specific.
 
 ## Building and testing the core + harness (any POSIX host)
 
@@ -45,7 +48,8 @@ make install          # copies to ~/Library/Audio/Plug-Ins/Components
 ```
 
 The Makefile is the canonical build path. It:
-* compiles the portable core as C++11 and the Apple layers as C++17;
+* compiles the portable core and the non-AU glue as C++14, the vendored SDK
+  and the AU component as gnu++17;
 * links a Mach-O bundle with `-mmacosx-version-min=10.13 -arch x86_64`;
 * assembles `CinemixAutomationBridge.component` from `Resources/Info.plist`;
 * lints the plist (`plutil`) and ad-hoc signs the bundle.
@@ -78,7 +82,7 @@ conflict with the old GSi AU.
 
 | Claim | Status |
 | --- | --- |
-| Portable core compiles (C++11) | **verified here (Linux, gcc 16, `-Wall -Wextra`, ASan)** |
+| Portable core compiles (C++14, `-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wold-style-cast -Wshadow`) | **verified here (Linux, gcc 16, ASan/UBSan)** |
 | Core test suite (56 cases: protocol, parser, map, scheduler, engine, capture, ring) | **verified here** |
 | Harness selftest/capture/replay | **verified here** |
 | AUv2 component builds | **not verified — requires the target Mac** |

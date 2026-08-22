@@ -135,7 +135,7 @@ static const CGFloat kPanelHeight = 420;
     [self addSubview:[self label:@"Log:" atX:130]];
     _level = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(165, 22, 120, 28) pullsDown:NO];
     [_level addItemsWithTitles:@[ @"Errors", @"Warnings", @"Info", @"Verbose", @"MIDI in/out" ]];
-    [_level selectItemAtIndex:(NSInteger)cinemix_mac::config::diagnosticsLevel()];
+    [_level selectItemAtIndex:static_cast<NSInteger>(cinemix_mac::config::diagnosticsLevel())];
     [_level setTarget:self];
     [_level setAction:@selector(onLevelChanged:)];
     [self addSubview:_level];
@@ -230,9 +230,9 @@ static const CGFloat kPanelHeight = 420;
 - (void)onLevelChanged:(id)sender {
     NSPopUpButton* popup = (NSPopUpButton*)sender;
     const NSInteger level = [popup indexOfSelectedItem];
-    cinemix_mac::config::setDiagnosticsLevel((int)level);
+    cinemix_mac::config::setDiagnosticsLevel(static_cast<int>(level));
     if (_ctx.diag)
-        _ctx.diag->setLevel((cinemix::Diagnostics::Level)level);
+        _ctx.diag->setLevel(static_cast<cinemix::Diagnostics::Level>(level));
 }
 
 - (void)onPortChanged:(id)sender {
@@ -290,7 +290,7 @@ static const CGFloat kPanelHeight = 420;
     NSInteger selection = 0;
     for (size_t i = 0; i < names.size(); ++i) {
         [titles addObject:[NSString stringWithUTF8String:names[i].c_str()]];
-        if (names[i] == selectedName) selection = (NSInteger)(i + 1);
+        if (names[i] == selectedName) selection = static_cast<NSInteger>(i + 1);
     }
     if (![[popup itemTitles] isEqualToArray:titles]) {
         [popup removeAllItems];

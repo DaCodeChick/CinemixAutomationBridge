@@ -65,7 +65,7 @@ void setOutput2Name(const std::string& n) { setString(kOut2, n); }
 int diagnosticsLevel() {
     NSUserDefaults* d = [NSUserDefaults standardUserDefaults];
     if ([d objectForKey:[NSString stringWithUTF8String:kDiagLevel]] == nil) return 2; // Info
-    return (int)[d integerForKey:[NSString stringWithUTF8String:kDiagLevel]];
+    return static_cast<int>([d integerForKey:[NSString stringWithUTF8String:kDiagLevel]];
 }
 void setDiagnosticsLevel(int level) {
     NSUserDefaults* d = [NSUserDefaults standardUserDefaults];
@@ -85,20 +85,20 @@ cinemix::MixerProfile loadProfile() {
 
     NSNumber* lo = [plist objectForKey:@"loStrips"];
     NSNumber* hi = [plist objectForKey:@"hiStrips"];
-    if (lo && [lo integerValue] > 0) profile.loStrips = (uint16_t)[lo integerValue];
-    if (hi && [hi integerValue] > 0) profile.hiStrips = (uint16_t)[hi integerValue];
+    if (lo && [lo integerValue] > 0) profile.loStrips = static_cast<std::uint16_t>([lo integerValue]);
+    if (hi && [hi integerValue] > 0) profile.hiStrips = static_cast<std::uint16_t>([hi integerValue]);
 
     NSArray* stereo = [plist objectForKey:@"stereoStrips"];
     if (stereo) {
         profile.stereoStrips.clear();
-        for (NSNumber* n in stereo) profile.stereoStrips.push_back((uint16_t)[n integerValue]);
+        for (NSNumber* n in stereo) profile.stereoStrips.push_back(static_cast<std::uint16_t>([n integerValue]));
     }
     NSNumber* joy1 = [plist objectForKey:@"hasJoystick1"];
     if (joy1) profile.hasJoystick1 = [joy1 boolValue];
     NSNumber* joy2 = [plist objectForKey:@"hasJoystick2"];
     if (joy2) profile.hasJoystick2 = [joy2 boolValue];
     NSNumber* aux = [plist objectForKey:@"auxMuteCount"];
-    if (aux) profile.auxMuteCount = (uint16_t)[aux integerValue];
+    if (aux) profile.auxMuteCount = static_cast<std::uint16_t>([aux integerValue]);
     NSNumber* master = [plist objectForKey:@"hasMasterFader"];
     if (master) profile.hasMasterFader = [master boolValue];
 
@@ -106,9 +106,9 @@ cinemix::MixerProfile loadProfile() {
     if ([res isEqualToString:@"fourteenBit"])
         profile.faderResolution = cinemix::FaderResolution::FourteenBit;
     NSNumber* hyst = [plist objectForKey:@"echoHysteresisSteps"];
-    if (hyst) profile.echoHysteresisSteps = (uint8_t)[hyst integerValue];
+    if (hyst) profile.echoHysteresisSteps = static_cast<std::uint8_t>([hyst integerValue]);
     NSNumber* budget = [plist objectForKey:@"budgetMessagesPerSecond"];
-    if (budget) profile.budgetMessagesPerSecond = (uint32_t)[budget integerValue];
+    if (budget) profile.budgetMessagesPerSecond = static_cast<std::uint32_t>([budget integerValue]);
     NSString* name = [plist objectForKey:@"name"];
     if (name) profile.name = stdStr(name);
     return profile;

@@ -13,14 +13,14 @@
  └────────────┬───────────────┘
               │  C++ facade (CinemixBridge)
               ▼
- ┌────────────────────────────┐   core/ (portable C++11, no Apple deps)
+ ┌────────────────────────────┐   core/ (portable C++14, no Apple deps)
  │  AutomationEngine          │   state + origins + commands + touch modes
  │  TouchModeTracker          │   SEL/touch state machine
  │  TransmissionScheduler     │   pacing, coalescing, priority lanes
  │  CinemixProtocol           │   domain events ↔ MIDI bytes
  │  MixerProfile              │   console configuration model
  │  ParameterMap              │   AU param IDs ↔ controls
- │  TestModeAnimator          │   demo animation
+ │  FaderOscillator           │   test-mode fader wave
  └────────────┬───────────────┘
               │  IMidiTransport (abstract: send(port, bytes) / inbound callback)
               ▼
@@ -135,8 +135,9 @@ bridge's dedupe.
 * Built on **Apple's AudioUnitSDK** (vendored under `mac/vendor/`, Apache-2.0,
   the classic 2020 initial release targeting macOS 10.9+) — the same AUBase
   scaffolding AUv2 plugins were built on in the Logic era. The vendored SDK is
-  used **unmodified**; it requires C++17, so the Apple layers compile as C++17
-  while the portable core stays C++11.
+  used **unmodified**; it requires C++17, so only the SDK sources and the AU
+  component that includes its headers compile as gnu++17 — the portable core
+  and the CoreMIDI/AppKit/Config glue stay first-party C++14 (brief §22).
 * Overrides: parameter info/list (legacy IDs 0..160 for the default profile),
   silence render, ClassInfo (AUBase), CocoaUI factory (programmatic AppKit
   panel: port pickers, Activate/Deactivate, Send Snapshot, Reset All,
@@ -160,9 +161,21 @@ bridge's dedupe.
 * Touch replies queue ahead of bulk traffic; activation sequences are sent
   paced (≈0.6 s) instead of the legacy instant blast.
 
-## 7. Testing (brief §20/§21)
+## 7. CoreMIDI port identity (audited)
 
-* `tests/` — zero-dependency C++11 test binary (CTest): protocol encode/decode
+The Cinemix protocol does **not** require knowing which physical MIDI input
+port produced a message: the two console halves use disjoint MIDI channels
+(LO: 1/3, HI: 2/4, master: 5), and the legacy bridge's RtMidi callbacks
+discarded source identity as well (both input ports shared one callback with
+no port argument). Decoding is channel-based by design, and the
+`CoreMidiTransport` therefore feeds both sources through one input port into
+one byte queue. Regression test `protocol: channel-only decoding
+disambiguates both console ports` pins the overlap case (same CC on
+different channels → different controls).
+
+## 8. Testing (brief §20/§21)
+
+* `tests/` — zero-dependency C++14 test binaries (CTest): protocol encode/decode
   gold data (including the exact legacy activation/deactivation byte
   sequences), running status, sysex/realtime robustness, parameter map IDs,
   round-trips, scheduler ordering/coalescing/budget, engine origins +

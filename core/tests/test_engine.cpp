@@ -92,28 +92,28 @@ void expectActivation(size_t loStrips, size_t hiStrips,
     // (Plugin.h SetAllChannelsMode), scoped to existing strips.
     const size_t sweepMax = 2 * (loStrips > hiStrips ? loStrips : hiStrips);
     for (size_t w = 0; w < sweepMax; ++w) {
-        if (w < 2 * loStrips) bc(3, uint8_t(64 + w), 2);
-        if (w < 2 * hiStrips) bc(4, uint8_t(64 + w), 2);
+        if (w < 2 * loStrips) bc(3, static_cast<uint8_t>(64 + w), 2);
+        if (w < 2 * hiStrips) bc(4, static_cast<uint8_t>(64 + w), 2);
     }
     bc(5, 64, 2);
     bc(4, 88, 2);
     bc(4, 90, 2);
     // Snapshot: faders (legacy order = parameter order), values 0.
-    for (int p = 0; p < 2 * 24; ++p) p1(1, uint8_t(2 * p), 0);          // LO faders
-    for (int p = 0; p < 2 * int(hiStrips); ++p) p2(2, uint8_t(2 * p), 0); // HI faders
+    for (int p = 0; p < 2 * 24; ++p) p1(1, static_cast<uint8_t>(2 * p), 0);          // LO faders
+    for (int p = 0; p < 2 * static_cast<int>(hiStrips); ++p) p2(2, static_cast<uint8_t>(2 * p), 0); // HI faders
     // Mutes off (2).
-    for (int p = 0; p < 2 * 24; ++p) p1(3, uint8_t(p), 2);
-    for (int p = 0; p < 2 * int(hiStrips); ++p) p2(4, uint8_t(p), 2);
+    for (int p = 0; p < 2 * 24; ++p) p1(3, static_cast<uint8_t>(p), 2);
+    for (int p = 0; p < 2 * static_cast<int>(hiStrips); ++p) p2(4, static_cast<uint8_t>(p), 2);
     // AUX 1..10 off.
-    for (int a = 0; a < 10; ++a) p2(5, 96, uint8_t(2 * (a + 1)));
+    for (int a = 0; a < 10; ++a) p2(5, 96, static_cast<uint8_t>(2 * (a + 1)));
     // Joysticks + master (master at 1.0 → 127).
     p2(2, 48, 0); p2(2, 50, 0); p2(4, 24, 2);
     p2(2, 52, 0); p2(2, 54, 0); p2(4, 26, 2);
     p2(5, 0, 127);
     // Sweep to AUTO (3).
     for (size_t w = 0; w < sweepMax; ++w) {
-        if (w < 2 * loStrips) bc(3, uint8_t(64 + w), 3);
-        if (w < 2 * hiStrips) bc(4, uint8_t(64 + w), 3);
+        if (w < 2 * loStrips) bc(3, static_cast<uint8_t>(64 + w), 3);
+        if (w < 2 * hiStrips) bc(4, static_cast<uint8_t>(64 + w), 3);
     }
     bc(5, 64, 3);
     bc(4, 88, 3);
@@ -137,20 +137,20 @@ TEST_CASE("engine: activation sequence matches legacy byte order exactly") {
     for (size_t i = 0; i < n1; ++i) {
         const MidiMessage& a = f.transport.sentToPort1[i];
         const MidiMessage& b = exp1[i];
-        CHECK_EQ(int(a.data[0]), int(b.data[0]));
-        CHECK_EQ(int(a.data[1]), int(b.data[1]));
-        CHECK_EQ(int(a.data[2]), int(b.data[2]));
-        CHECK_EQ(int(a.port), int(b.port));
+        CHECK_EQ(static_cast<int>(a.data[0]), static_cast<int>(b.data[0]));
+        CHECK_EQ(static_cast<int>(a.data[1]), static_cast<int>(b.data[1]));
+        CHECK_EQ(static_cast<int>(a.data[2]), static_cast<int>(b.data[2]));
+        CHECK_EQ(static_cast<int>(a.port), static_cast<int>(b.port));
         if (a.data[0] != b.data[0] || a.data[1] != b.data[1] || a.data[2] != b.data[2])
             break;
     }
     for (size_t i = 0; i < n2; ++i) {
         const MidiMessage& a = f.transport.sentToPort2[i];
         const MidiMessage& b = exp2[i];
-        CHECK_EQ(int(a.data[0]), int(b.data[0]));
-        CHECK_EQ(int(a.data[1]), int(b.data[1]));
-        CHECK_EQ(int(a.data[2]), int(b.data[2]));
-        CHECK_EQ(int(a.port), int(b.port));
+        CHECK_EQ(static_cast<int>(a.data[0]), static_cast<int>(b.data[0]));
+        CHECK_EQ(static_cast<int>(a.data[1]), static_cast<int>(b.data[1]));
+        CHECK_EQ(static_cast<int>(a.data[2]), static_cast<int>(b.data[2]));
+        CHECK_EQ(static_cast<int>(a.port), static_cast<int>(b.port));
         if (a.data[0] != b.data[0] || a.data[1] != b.data[1] || a.data[2] != b.data[2])
             break;
     }
@@ -163,7 +163,7 @@ TEST_CASE("engine: activation without transport connection fails cleanly") {
     f.engine.activate();
     f.engine.drainNow();
     CHECK(!f.engine.isActivated());
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(0));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: deactivation sequence — FF is the final byte") {
@@ -183,8 +183,8 @@ TEST_CASE("engine: deactivation sequence — FF is the final byte") {
     CHECK(f.transport.sentToPort1.back().isSystemReset());
     CHECK(f.transport.sentToPort2.back().isSystemReset());
     // First message: CC127=0 ch5.
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[1]), 127);
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 0);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 127);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 0);
 }
 
 TEST_CASE("engine: host writes stored pre-activation but not transmitted") {
@@ -192,8 +192,8 @@ TEST_CASE("engine: host writes stored pre-activation but not transmitted") {
     f.engine.setHostParameter(0, 0.4f);
     f.engine.drainNow();
     CHECK_NEAR(f.engine.getParameter(0), 0.4f, 1e-6);
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(0));
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: console events ignored before activation") {
@@ -203,7 +203,7 @@ TEST_CASE("engine: console events ignored before activation") {
     f.transport.injectCc(1, 0, 50); // fader strip 1 moves
     f.engine.drainNow();
     CHECK_NEAR(f.engine.getParameter(0), 0.4f, 1e-6); // unchanged
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: host automation flows to console") {
@@ -215,20 +215,20 @@ TEST_CASE("engine: host automation flows to console") {
 
     f.engine.setHostParameter(0, 0.5f); // M01 Chan fader
     f.engine.drainNow();
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[0] & 0x0F), 0); // ch1
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[1]), 0);        // CC0
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 63);       // trunc(0.5*127)
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[0] & 0x0F), 0); // ch1
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 0);        // CC0
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 63);       // trunc(0.5*127)
 
     f.engine.setHostParameter(72, 1.f); // M01 Chan mute
     f.engine.drainNow();
     const MidiMessage* last = f.transport.last(1);
     CHECK(last != nullptr);
-    CHECK_EQ(int(last->data[1]), 0);
-    CHECK_EQ(int(last->data[2]), 3); // ON
+    CHECK_EQ(static_cast<int>(last->data[1]), 0);
+    CHECK_EQ(static_cast<int>(last->data[2]), 3); // ON
 
     // No host listener events for host-originated changes (no echo loop).
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: console echoes of commanded values are suppressed") {
@@ -240,20 +240,20 @@ TEST_CASE("engine: console echoes of commanded values are suppressed") {
 
     f.engine.setHostParameter(0, 0.5f);
     f.engine.drainNow();
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
 
     // The motorized fader reports the commanded position back (echo).
     f.transport.injectCc(1, 0, 63);
     f.engine.drainNow();
     CHECK_NEAR(f.engine.getParameter(0), 63.f / 127.f, 1e-6); // state updated
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));        // but no host write
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));      // and no re-send
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));        // but no host write
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));      // and no re-send
 
     // One 7-bit step away is still within hysteresis (motor interpolation).
     f.transport.injectCc(1, 0, 62);
     f.engine.drainNow();
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
 }
 
 TEST_CASE("engine: hand move (different value) reports to host and never bounces") {
@@ -271,12 +271,12 @@ TEST_CASE("engine: hand move (different value) reports to host and never bounces
     f.transport.injectCc(1, 0, 100);
     f.engine.drainNow();
 
-    CHECK_EQ(f.listener.parameterEvents(), size_t(1));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(1));
     CHECK(f.listener.events[0].kind == MockListener::Ev::Parameter);
-    CHECK_EQ(int(f.listener.events[0].param), 0);
+    CHECK_EQ(static_cast<int>(f.listener.events[0].param), 0);
     CHECK_NEAR(f.listener.events[0].value, 100.f / 127.f, 1e-6);
     CHECK(f.listener.events[0].origin == Origin::Console);
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(0)); // no bounce-back
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0)); // no bounce-back
 }
 
 TEST_CASE("engine: touch → gesture + write mode reply; release → gesture + auto") {
@@ -289,26 +289,26 @@ TEST_CASE("engine: touch → gesture + write mode reply; release → gesture + a
     // Touch sensor on strip 1 Chan path (ch3 CC64, value 6).
     f.transport.injectCc(3, 64, 6);
     f.engine.drainNow();
-    CHECK_EQ(f.listener.gestureEvents(), size_t(1));
+    CHECK_EQ(f.listener.gestureEvents(), static_cast<size_t>(1));
     CHECK(f.listener.events[0].begin == true);
     // Reply: mode 2 (WRITE) — high priority.
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[1]), 64);
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 2);
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 64);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 2);
 
     // Move while touched: user-originated, no outbound echo.
     f.transport.injectCc(1, 0, 80);
     f.engine.drainNow();
-    CHECK_EQ(f.listener.parameterEvents(), size_t(1));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(1));
     CHECK(f.listener.events[1].origin == Origin::Console);
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(1));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(1));
 
     // Release: gesture end + mode 3 (AUTO/RW).
     f.transport.injectCc(3, 64, 5);
     f.engine.drainNow();
-    CHECK_EQ(f.listener.gestureEvents(), size_t(2));
+    CHECK_EQ(f.listener.gestureEvents(), static_cast<size_t>(2));
     CHECK(f.listener.events.back().begin == false);
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 3);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 3);
 }
 
 TEST_CASE("engine: strip SEL press rotates mode and replies") {
@@ -320,22 +320,22 @@ TEST_CASE("engine: strip SEL press rotates mode and replies") {
     // After activation the strip mode is AUTO (3); first SEL press → 0.
     f.transport.injectCc(3, 64, 1);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 0);
-    CHECK_EQ(int(f.engine.touchModes().stripMode(0, StripPath::Chan)), 0);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 0);
+    CHECK_EQ(static_cast<int>(f.engine.touchModes().stripMode(0, StripPath::Chan)), 0);
 
     f.transport.injectCc(3, 64, 1);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 1);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 1);
     f.transport.injectCc(3, 64, 1);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 2);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 2);
     f.transport.injectCc(3, 64, 1);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 3);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 3);
     // Wrap.
     f.transport.injectCc(3, 64, 1);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1.back().data[2]), 0);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1.back().data[2]), 0);
 }
 
 TEST_CASE("engine: touch replies suppressed when mode is not AUTO") {
@@ -352,7 +352,7 @@ TEST_CASE("engine: touch replies suppressed when mode is not AUTO") {
     // Touch while ISO: no mode reply (legacy gate).
     f.transport.injectCc(3, 64, 6);
     f.engine.drainNow();
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(0));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: master SEL press applies mode to all strips") {
@@ -366,10 +366,10 @@ TEST_CASE("engine: master SEL press applies mode to all strips") {
 
     // masterMode was 3 → rotates to 0; sweep sends mode 0 to every strip.
     const MidiMessage& first = f.transport.sentToPort1[0];
-    CHECK_EQ(int(first.data[1]), 64);
-    CHECK_EQ(int(first.data[2]), 0);
+    CHECK_EQ(static_cast<int>(first.data[1]), 64);
+    CHECK_EQ(static_cast<int>(first.data[2]), 0);
     // 48 LO + 24 HI sweep messages per port stream (broadcast).
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(48 + 24));
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(48 + 24));
     // The master's own SEL address (ch5 CC64) must NOT be rewritten (legacy).
     for (size_t i = 0; i < f.transport.sentToPort2.size(); ++i) {
         const MidiMessage& m = f.transport.sentToPort2[i];
@@ -388,10 +388,10 @@ TEST_CASE("engine: snapshot resends everything (dedupe cleared)") {
 
     // 161 position messages: 72 faders + 72 mutes + 10 aux + 4 axes
     // + 2 joy mutes + 1 master, routed by side.
-    CHECK_EQ(f.transport.sentToPort1.size(), size_t(48 + 48));
-    CHECK_EQ(f.transport.sentToPort2.size(), size_t(24 + 24 + 10 + 7));
-    CHECK_EQ(int(f.transport.sentToPort2.back().data[0] & 0x0F), 4); // ch5 master
-    CHECK_EQ(int(f.transport.sentToPort2.back().data[2]), 127);      // master 1.0
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(48 + 48));
+    CHECK_EQ(f.transport.sentToPort2.size(), static_cast<size_t>(24 + 24 + 10 + 7));
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort2.back().data[0] & 0x0F), 4); // ch5 master
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort2.back().data[2]), 127);      // master 1.0
 }
 
 TEST_CASE("engine: reset all — modes to AUTO, faders to -inf, master to max") {
@@ -406,10 +406,10 @@ TEST_CASE("engine: reset all — modes to AUTO, faders to -inf, master to max") 
     f.engine.drainNow();
 
     // Mode sweep 3 first, then snapshot (mutes off, master 127).
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 3);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 3);
     const MidiMessage& master = f.transport.sentToPort2.back();
-    CHECK_EQ(int(master.data[1]), 0);
-    CHECK_EQ(int(master.data[2]), 127);
+    CHECK_EQ(static_cast<int>(master.data[1]), 0);
+    CHECK_EQ(static_cast<int>(master.data[2]), 127);
     CHECK_NEAR(f.engine.getParameter(160), 1.f, 1e-6);
     CHECK_NEAR(f.engine.getParameter(0), 0.f, 1e-6);
 }
@@ -425,7 +425,7 @@ TEST_CASE("engine: all mutes toggles every mute-like parameter") {
     f.engine.drainNow();
 
     // 72 strip mutes + 10 aux + 2 joystick mutes = 84 listener events.
-    CHECK_EQ(f.listener.parameterEvents(), size_t(72 + 10 + 2));
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(72 + 10 + 2));
     CHECK(f.listener.events[0].origin == Origin::UserInterface);
 
     // Spot checks on the wire: strip mute ON=3, AUX1 ON=3, joy1 mute ON=3.
@@ -437,13 +437,13 @@ TEST_CASE("engine: all mutes toggles every mute-like parameter") {
     }
     CHECK(sawAuxOn);
     CHECK(sawJoyOn);
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 3);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 3);
 
     // Toggle back off.
     f.transport.clear();
     f.engine.toggleAllMutes();
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 2);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 2);
 }
 
 TEST_CASE("engine: alternate profile activation sweep is profile-scoped") {
@@ -505,7 +505,7 @@ TEST_CASE("engine: worker thread mode — activate/deactivate round trip") {
     CHECK(sawFader);
 }
 
-TEST_CASE("engine: test mode sends MIDI but never host automation") {
+TEST_CASE("engine: test mode moves faders only and restores modes") {
     Fixture f;
     f.engine.activate();
     f.engine.drainNow();
@@ -514,25 +514,71 @@ TEST_CASE("engine: test mode sends MIDI but never host automation") {
 
     f.engine.setTestMode(true);
     f.engine.drainNow();
-    // Test mode ON: full reset then all strips to READ (1).
-    CHECK_EQ(int(f.transport.sentToPort1[0].data[2]), 3); // reset sweep
-    bool sawRead = false;
-    for (size_t i = 0; i < f.transport.sentToPort1.size(); ++i)
-        if (f.transport.sentToPort1[i].data[2] == 1) sawRead = true;
-    CHECK(sawRead);
+    CHECK(f.engine.testMode());
 
+    // ON: a READ(1) sweep (72 messages per port stream — broadcast) and
+    // NOTHING else. No reset sweep, no snapshot, no mute traffic.
+    const size_t sweepMessages = 48 + 24;
+    CHECK_EQ(f.transport.sentToPort1.size(), sweepMessages);
+    CHECK_EQ(f.transport.sentToPort2.size(), sweepMessages);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 1);
+    bool anyMuteTraffic = false;
+    for (size_t i = 0; i < f.transport.sentToPort2.size(); ++i) {
+        const MidiMessage& m = f.transport.sentToPort2[i];
+        const int channel = static_cast<int>(m.data[0] & 0x0F) + 1;
+        const bool isMuteCc = (channel == 3 || channel == 4) && m.data[1] < 48;
+        const bool isAuxCc = (channel == 5) && m.data[1] == 96;
+        if (isMuteCc || isAuxCc) anyMuteTraffic = true;
+    }
+    CHECK(!anyMuteTraffic);
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0)); // no reset/snapshot noise
+
+    // Run the oscillator: fader position messages appear (values within the
+    // [0.2, 0.8] travel), still no mute traffic, and the host listener sees
+    // nothing — test motion is never user automation.
     f.transport.clear();
     f.listener.events.clear();
     std::this_thread::sleep_for(std::chrono::milliseconds(120));
     f.engine.drainNow();
-    // Animation updates went out; the listener saw nothing.
     CHECK(!f.transport.sentToPort1.empty());
-    CHECK_EQ(f.listener.parameterEvents(), size_t(0));
-    CHECK_EQ(f.listener.gestureEvents(), size_t(0));
+    bool sawFaderPosition = false;
+    bool sawMuteTraffic = false;
+    for (size_t i = 0; i < f.transport.sentToPort1.size(); ++i) {
+        const MidiMessage& m = f.transport.sentToPort1[i];
+        const int channel = static_cast<int>(m.data[0] & 0x0F) + 1;
+        if (channel == 1 && m.data[1] % 2 == 0) {
+            sawFaderPosition = true;
+            // Quantized value inside the oscillator's range.
+            CHECK(m.data[2] >= static_cast<MidiByte>(0.2f * 127.0f));
+            CHECK(m.data[2] <= static_cast<MidiByte>(0.8f * 127.0f));
+        }
+        if ((channel == 3) && m.data[1] < 48) sawMuteTraffic = true;
+    }
+    CHECK(sawFaderPosition);
+    CHECK(!sawMuteTraffic);
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
+    CHECK_EQ(f.listener.gestureEvents(), static_cast<size_t>(0));
 
+    // Console echoes during test mode must not reach the host either.
+    f.transport.injectCc(1, 0, 50); // motor echo of an oscillator step
+    f.engine.drainNow();
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
+
+    // OFF: modes restored to their previous state (AUTO=3 after activation).
+    f.transport.clear();
     f.engine.setTestMode(false);
     f.engine.drainNow();
     CHECK(!f.engine.testMode());
+    CHECK_EQ(f.transport.sentToPort1.size(), sweepMessages);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[2]), 3);
+}
+
+TEST_CASE("engine: test mode requires an activated console") {
+    Fixture f;
+    f.engine.setTestMode(true);
+    f.engine.drainNow();
+    CHECK(!f.engine.testMode());
+    CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0));
 }
 
 TEST_CASE("engine: AUX mute round trip from console") {
@@ -545,15 +591,15 @@ TEST_CASE("engine: AUX mute round trip from console") {
     // Console: AUX 4 ON (value 9).
     f.transport.injectCc(5, 96, 9);
     f.engine.drainNow();
-    CHECK_EQ(f.listener.parameterEvents(), size_t(1));
-    CHECK_EQ(int(f.listener.events[0].param), 147);
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(1));
+    CHECK_EQ(static_cast<int>(f.listener.events[0].param), 147);
     CHECK_NEAR(f.listener.events[0].value, 1.f, 1e-6);
-    CHECK_EQ(f.transport.sentToPort2.size(), size_t(0)); // no echo
+    CHECK_EQ(f.transport.sentToPort2.size(), static_cast<size_t>(0)); // no echo
 
     // Host commands AUX 4 OFF.
     f.engine.setHostParameter(147, 0.f);
     f.engine.drainNow();
-    CHECK_EQ(int(f.transport.sentToPort2.back().data[2]), 8);
+    CHECK_EQ(static_cast<int>(f.transport.sentToPort2.back().data[2]), 8);
 }
 
 TEST_CASE("engine: pending target survives console reports of the old state") {
@@ -585,14 +631,14 @@ TEST_CASE("engine: pending target survives console reports of the old state") {
     transport.injectCc(1, 0, 10);
     engine.processOnce();
     CHECK(engine.scheduler().hasPending(0)); // pending survived
-    CHECK_EQ(listener.parameterEvents(), size_t(0)); // not a user move
+    CHECK_EQ(listener.parameterEvents(), static_cast<size_t>(0)); // not a user move
     CHECK_NEAR(engine.getParameter(0), 10.f / 127.f, 1e-6); // visible state updated
 
     // A second report, still while pending: same treatment.
     transport.injectCc(1, 0, 20);
     engine.processOnce();
     CHECK(engine.scheduler().hasPending(0));
-    CHECK_EQ(listener.parameterEvents(), size_t(0));
+    CHECK_EQ(listener.parameterEvents(), static_cast<size_t>(0));
     engine.setListener(nullptr);
 }
 

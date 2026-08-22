@@ -8,7 +8,7 @@ by GSi (Guido Scognamiglio, 2012–2017).
 The goal: recover the legacy bridge's reverse-engineered hardware knowledge,
 preserve its proven console behavior byte-for-byte where it matters, and
 modernize the early-2000s VST2/Windows/RtMidi architecture into a native,
-maintainable **C++11 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
+maintainable **C++14 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
 **2014 Intel Mac mini on macOS 10.13 High Sierra**.
 
 ```
@@ -18,7 +18,7 @@ maintainable **C++11 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
  Cinemix AU (augn) ── Objective-C++/AppKit panel
       │
       ▼
- Cinemix Core ── C++11 (MixerProfile · ParameterMap · AutomationEngine
+ Cinemix Core ── C++14 (MixerProfile · ParameterMap · AutomationEngine
       │              CinemixProtocol · TransmissionScheduler · diagnostics)
       ▼
  CoreMIDI ── 2× MIDI I/O ── DB25 ASYNC INTERFACE ── D&R Cinemix (1995)
@@ -26,7 +26,7 @@ maintainable **C++11 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
 
 ## Status (honest)
 
-* **Portable core + tests: built and passing on Linux** (63 test cases:
+* **Portable core + tests: built and passing on Linux** (75 test cases:
   protocol gold data, parser robustness, legacy parameter layout, scheduler,
   engine with byte-exact activation/deactivation sequences, echo suppression,
   feedback-loop prevention, capture/replay).
@@ -46,7 +46,7 @@ maintainable **C++11 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
 | `docs/BUILDING.md` | toolchain, build steps, auval/Logic rescan, honest status matrix |
 | `docs/USER_GUIDE.md` | cable wiring, activation, Logic workflow, mixer profile plist |
 | `docs/TESTING.md` | test layers + on-console checklist |
-| `core/` | portable C++11 core + zero-dependency test suite (CMake) |
+| `core/` | portable C++14 core + zero-dependency test suite (CMake) |
 | `tools/cinemix_harness/` | simulated console selftest, capture/replay, demo |
 | `mac/` | AUv2 component, CoreMIDI transport, AppKit panel, Makefile, Info.plist, vendored Apple AudioUnitSDK (Apache-2.0) |
 | `_legacy_analysis/` | the untouched legacy repository, kept for reference |
@@ -66,6 +66,13 @@ cd mac && make && make validate && make install
 cmake -S . -B build && cmake --build build -j4 && ctest --test-dir build
 ./build/tools/cinemix_harness/cinemix_harness selftest
 ```
+
+## License
+
+First-party code: **GNU GPL version 3** (see LICENSE and NOTICE). The vendored
+Apple AudioUnitSDK remains Apache-2.0, and the legacy GSi material carries its
+own notice. Whether GPLv3 means GPL-3.0-only or GPL-3.0-or-later is left to
+the project maintainer (NOTICE).
 
 ## Design principles
 

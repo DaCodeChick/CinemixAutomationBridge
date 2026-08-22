@@ -56,6 +56,10 @@ struct Registry {
 
 } // namespace testfw
 
+// The two-stage TESTFW_CONCAT macro pair is deliberate, not legacy habit:
+// `__LINE__` must expand before token pasting (brief §10 — C++14 cannot
+// replace this preprocessor functionality). The do/while(0) wrappers are
+// standard statement-like-macro hygiene. Keep both.
 #define TESTFW_CONCAT_(a, b) a##b
 #define TESTFW_CONCAT(a, b) TESTFW_CONCAT_(a, b)
 

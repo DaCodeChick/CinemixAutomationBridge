@@ -39,10 +39,10 @@ void check(bool ok, const char* what) {
 
 struct PrintListener : public AutomationEngine::Listener {
     void onGesture(ParamId p, bool begin) override {
-        std::printf("  host gesture: param %u %s\n", unsigned(p), begin ? "BEGIN" : "END");
+        std::printf("  host gesture: param %u %s\n", static_cast<unsigned>(p), begin ? "BEGIN" : "END");
     }
     void onParameter(ParamId p, float v, Origin o) override {
-        std::printf("  host parameter: %u = %.4f (origin %d)\n", unsigned(p), v, int(o));
+        std::printf("  host parameter: %u = %.4f (origin %d)\n", static_cast<unsigned>(p), v, static_cast<int>(o));
     }
     void onConnected(bool a) override {
         std::printf("  console %s\n", a ? "ACTIVATED" : "RELEASED");
@@ -100,7 +100,7 @@ int runSelftest(const std::string& capturePath) {
         bool masterMax = false;
         for (size_t i = 0; i < transport.sentToPort2.size(); ++i) {
             const MidiMessage& m = transport.sentToPort2[i];
-            const uint8_t ch = uint8_t(m.data[0] & 0x0F) + 1;
+            const uint8_t ch = static_cast<uint8_t>(m.data[0] & 0x0F) + 1;
             if (m.data[1] >= 64 && m.data[1] <= 111) {
                 if (ch == 3 && m.data[2] == 2) ++ch3v2;
                 if (ch == 3 && m.data[2] == 3) ++ch3v3;
@@ -216,12 +216,12 @@ int runReplay(const std::string& path) {
         if (ev.direction == 0) {
             // Console → bridge: feed the bytes.
             std::printf("  [t=%llu] console -> bridge: %s\n",
-                        (unsigned long long)ev.timestampUs, describe(ev.message).c_str());
-            engine.handleIncoming(ev.message.data, ev.message.length);
+                        static_cast<unsigned long long>(ev.timestampUs), describe(ev.message).c_str());
+            engine.handleIncoming(ev.message.data.data(), ev.message.length);
             engine.drainNow();
         } else {
             std::printf("  [t=%llu] bridge -> console: %s\n",
-                        (unsigned long long)ev.timestampUs, describe(ev.message).c_str());
+                        static_cast<unsigned long long>(ev.timestampUs), describe(ev.message).c_str());
         }
     }
     if (reader.corruptCount() > 0)
@@ -253,16 +253,16 @@ int runDemo() {
     // Host writes a fader ramp; the console echoes motor progress.
     std::printf("  host: fader 1 ramp 0.0 -> 1.0\n");
     for (int i = 0; i <= 10; ++i) {
-        engine.setHostParameter(0, float(i) / 10.f);
+        engine.setHostParameter(0, static_cast<float>(i) / 10.f);
         engine.drainNow();
         const MidiMessage* m = transport.last(1);
         if (m) {
-            console.emulateMotorEcho(1, 0, uint8_t(i == 0 ? 0 : (i - 1) * 12), m->data[2]);
+            console.emulateMotorEcho(1, 0, static_cast<uint8_t>(i == 0 ? 0 : (i - 1) * 12), m->data[2]);
             engine.drainNow();
         }
     }
     std::printf("  final fader state: %.4f (console saw %u)\n",
-                engine.getParameter(0), unsigned(transport.sentToPort1.back().data[2]));
+                engine.getParameter(0), static_cast<unsigned>(transport.sentToPort1.back().data[2]));
     engine.setListener(nullptr);
     return 0;
 }

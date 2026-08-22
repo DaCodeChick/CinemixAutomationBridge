@@ -6,10 +6,9 @@
 //     byte-order of multi-step sequences like activation).
 //   * Position updates inside `main_` are coalesced per parameter
 //     (latest-wins): safe because all position data is absolute.
-//   * A global message budget protects the DIN MIDI link; commands drain
-//     first within a tick, then positions (both lanes draw from the same
-//     credit).
-//   * Send-time dedupe reproduces the legacy `prev_CC_Val` behavior.
+//   * A global message budget protects the DIN MIDI link; the high lane
+//     drains first within a tick, then the main lane (both draw from the
+//     same credit).
 //
 // The scheduler is single-threaded by design: only the bridge worker thread
 // calls it (the engine funnels host/UI writes through the worker first).
@@ -17,9 +16,9 @@
 #ifndef CINEMIX_TRANSMISSION_SCHEDULER_H
 #define CINEMIX_TRANSMISSION_SCHEDULER_H
 
+#include <cstddef>
 #include <cstdint>
 #include <deque>
-#include <vector>
 
 #include "cinemix/Diagnostics.h"
 #include "cinemix/MidiTransport.h"
@@ -30,13 +29,14 @@ namespace cinemix {
 
 class TransmissionScheduler {
 public:
-    TransmissionScheduler(const MixerProfile& profile, Diagnostics& diag, IMidiTransport& transport);
+    TransmissionScheduler(const MixerProfile& profile, Diagnostics& diag,
+                          IMidiTransport& transport);
 
     // Enqueue a management command (never coalesced, FIFO order preserved).
-    void enqueueCommand(const OutboundCommand& cmd);
+    void enqueueCommand(const OutboundCommand& command);
 
     // Enqueue a high-priority management command (touch replies).
-    void enqueueHigh(const OutboundCommand& cmd);
+    void enqueueHigh(const OutboundCommand& command);
 
     // Enqueue a position update: coalesces with any pending update for the
     // same parameter (latest wins).
@@ -57,23 +57,21 @@ public:
     // if work remains. Call from the worker thread at schedulerTickMs cadence.
     bool tick();
 
-    // Unpaced drain: sends everything (ordering, coalescing and dedupe still
-    // apply). Returns messages sent. Test/harness use only.
-    size_t drainToEmpty();
+    // Unpaced drain: sends everything (ordering and coalescing still apply).
+    // Returns messages sent. Test/harness use only.
+    std::size_t drainToEmpty();
 
-    size_t pending() const { return high_.size() + main_.size(); }
-    size_t sentTotal() const { return sent_; }
-    size_t droppedTotal() const { return dropped_; }
-
-    // Diagnostics snapshot: messages coalesced away since start.
-    size_t coalescedCount() const { return coalesced_; }
+    std::size_t pending() const noexcept { return high_.size() + main_.size(); }
+    std::size_t sentTotal() const noexcept { return sent_; }
+    std::size_t droppedTotal() const noexcept { return dropped_; }
+    std::size_t coalescedCount() const noexcept { return coalesced_; }
 
 private:
     struct Entry {
         OutboundCommand cmd;
     };
 
-    bool sendOne(const OutboundCommand& cmd);
+    void sendOne(const OutboundCommand& command);
 
     const MixerProfile& profile_;
     Diagnostics& diag_;
@@ -84,10 +82,9 @@ private:
 
     double credit_;
     double budgetPerTick_;
-    double maxBurst_;
-    size_t sent_;
-    size_t dropped_;
-    size_t coalesced_;
+    std::size_t sent_;
+    std::size_t dropped_;
+    std::size_t coalesced_;
 };
 
 } // namespace cinemix

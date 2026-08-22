@@ -5,27 +5,34 @@
 
 namespace cinemix {
 
+namespace {
+// Small burst allowance: lets the budget absorb a brief spike (e.g. a touch
+// reply immediately after a burst) without overshooting the steady rate.
+constexpr double kMaxBurst = 8.0;
+// Rate-limit the "transport rejected" warning.
+constexpr std::size_t kTransportFailureWarningLimit = 8;
+} // namespace
+
 TransmissionScheduler::TransmissionScheduler(const MixerProfile& profile,
                                              Diagnostics& diag,
                                              IMidiTransport& transport)
     : profile_(profile), diag_(diag), transport_(transport),
       credit_(0.0),
-      budgetPerTick_(double(profile.budgetMessagesPerSecond) *
-                     double(profile.schedulerTickMs) / 1000.0),
-      maxBurst_(8.0),
+      budgetPerTick_(static_cast<double>(profile.budgetMessagesPerSecond) *
+                     static_cast<double>(profile.schedulerTickMs) / 1000.0),
       sent_(0), dropped_(0), coalesced_(0) {
 }
 
-void TransmissionScheduler::enqueueCommand(const OutboundCommand& cmd) {
-    Entry e;
-    e.cmd = cmd;
-    main_.push_back(e);
+void TransmissionScheduler::enqueueCommand(const OutboundCommand& command) {
+    Entry entry;
+    entry.cmd = command;
+    main_.push_back(entry);
 }
 
-void TransmissionScheduler::enqueueHigh(const OutboundCommand& cmd) {
-    Entry e;
-    e.cmd = cmd;
-    high_.push_back(e);
+void TransmissionScheduler::enqueueHigh(const OutboundCommand& command) {
+    Entry entry;
+    entry.cmd = command;
+    high_.push_back(entry);
 }
 
 void TransmissionScheduler::enqueuePosition(ParamId param, const MidiMessage& message) {
@@ -38,13 +45,13 @@ void TransmissionScheduler::enqueuePosition(ParamId param, const MidiMessage& me
             break;
         }
     }
-    OutboundCommand cmd;
-    cmd.kind = CommandKind::SetMode; // irrelevant for positions
-    cmd.message = message;
-    cmd.param = param;
-    Entry e;
-    e.cmd = cmd;
-    main_.push_back(e);
+    OutboundCommand command;
+    command.kind = CommandKind::SetMode; // irrelevant for positions
+    command.message = message;
+    command.param = param;
+    Entry entry;
+    entry.cmd = command;
+    main_.push_back(entry);
 }
 
 void TransmissionScheduler::cancelPosition(ParamId param) {
@@ -75,66 +82,73 @@ bool TransmissionScheduler::hasPending(ParamId param) const {
     return false;
 }
 
-bool TransmissionScheduler::sendOne(const OutboundCommand& cmd) {
-    const MidiMessage& m = cmd.message;
-    if (m.length == 0 || m.length > 3) {
+void TransmissionScheduler::sendOne(const OutboundCommand& command) {
+    const MidiMessage& message = command.message;
+    if (message.length == 0 || message.length > 3) {
         ++dropped_;
-        return true; // malformed: drop, keep going
+        return; // malformed: drop, keep going
     }
 
-    if (!transport_.send(m.port, m)) {
+    if (!transport_.send(message.port, message)) {
         ++dropped_;
-        if (dropped_ <= 8) diag_.warning("transport rejected outbound message (not connected?)");
-        return true;
+        if (dropped_ <= kTransportFailureWarningLimit)
+            diag_.warning("transport rejected outbound message (not connected?)");
+        return;
     }
     ++sent_;
 
-    if (static_cast<uint8_t>(diag_.level()) >= static_cast<uint8_t>(Diagnostics::Level::MidiOut)) {
+    if (static_cast<std::uint8_t>(diag_.level()) >=
+        static_cast<std::uint8_t>(Diagnostics::Level::MidiOut)) {
         char buf[80];
-        if (m.length == 1)
-            snprintf(buf, sizeof(buf), "TX port %u: FF", m.port);
-        else if (m.length == 2)
-            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X", m.port, m.data[0], m.data[1]);
+        if (message.length == 1)
+            snprintf(buf, sizeof(buf), "TX port %u: FF", static_cast<unsigned>(message.port));
+        else if (message.length == 2)
+            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X",
+                     static_cast<unsigned>(message.port), message.data[0], message.data[1]);
         else
-            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X %02X", m.port, m.data[0], m.data[1], m.data[2]);
+            snprintf(buf, sizeof(buf), "TX port %u: %02X %02X %02X",
+                     static_cast<unsigned>(message.port), message.data[0], message.data[1],
+                     message.data[2]);
         diag_.midiOut(buf);
     }
-    return true;
 }
 
 bool TransmissionScheduler::tick() {
-    credit_ = std::min(credit_ + budgetPerTick_, maxBurst_);
+    credit_ = std::min(credit_ + budgetPerTick_, kMaxBurst);
     if (credit_ < 1.0) return pending() > 0;
 
     // High-priority lane first.
     while (credit_ >= 1.0 && !high_.empty()) {
-        Entry e = high_.front();
+        Entry entry = high_.front();
         high_.pop_front();
-        sendOne(e.cmd);
+        sendOne(entry.cmd);
         credit_ -= 1.0;
     }
     // Then the main lane.
     while (credit_ >= 1.0 && !main_.empty()) {
-        Entry e = main_.front();
+        Entry entry = main_.front();
         main_.pop_front();
-        sendOne(e.cmd);
+        sendOne(entry.cmd);
         credit_ -= 1.0;
     }
     return pending() > 0;
 }
 
-size_t TransmissionScheduler::drainToEmpty() {
-    size_t n = 0;
+std::size_t TransmissionScheduler::drainToEmpty() {
+    std::size_t sent = 0;
     while (!high_.empty() || !main_.empty()) {
-        Entry e;
-        bool fromHigh = false;
-        if (!high_.empty()) { e = high_.front(); high_.pop_front(); fromHigh = true; }
-        else { e = main_.front(); main_.pop_front(); }
-        (void)fromHigh;
-        sendOne(e.cmd);
-        ++n;
+        Entry entry;
+        if (!high_.empty()) {
+            entry = high_.front();
+            high_.pop_front();
+        } else {
+            entry = main_.front();
+            main_.pop_front();
+        }
+        sendOne(entry.cmd);
+        ++sent;
     }
-    return n;
+    return sent;
 }
 
 } // namespace cinemix

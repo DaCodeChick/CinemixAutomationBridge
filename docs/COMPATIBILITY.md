@@ -29,7 +29,7 @@ Windows x86, also compiled with `MACAU` at some point), `Editor.cpp/h`,
 | LO ch1/ch3 port1, HI ch2/ch4 port2, master ch5 port2, joystick axes ch2 port2 | Side-based channel/port split | yes | none | `MixerProfile` + `CinemixProtocol` |
 | Parameter IDs 0..160 exactly as legacy for default profile | ID stability with legacy docs; Logic automation IDs | — | none | `ParameterMap` (IDs derived from profile; default = legacy) |
 | Strip naming: strips 25–28 = S1..S4 (stereo), others M1..M32 | Author's console layout | yes | none | `MixerProfile::stereoStrips` (default {24,25,26,27}) |
-| Test Mode moves faders/mutes at 25/10 Hz without writing host automation | Demo/diagnostic animation | no | VST2 audio loop as clock | `TestModeAnimator` (CHANGED: timer-thread clock, paced) |
+| Test Mode moves faders without writing host automation | Demo/diagnostic | no | VST2 audio loop as clock | `FaderOscillator` (CHANGED: worker-thread clock, paced, fader-only traveling wave — no mutes) |
 | Master fader default = 1.0, everything else 0 | Legacy default state | — | none | `AutomationEngine` initial state |
 | Port selection persisted by name (ini), restored on load, alert on open failure | Config persistence | no | RtMidi/ini | CHANGED: NSUserDefaults (macOS idiomatic) |
 | Broadcast mode/remote commands to both ports; route position data per side | Proven-safe addressing | yes | none | transport `port` argument (0 = broadcast) |
@@ -49,7 +49,7 @@ Windows x86, also compiled with `MACAU` at some point), `Editor.cpp/h`,
 | `setParameterAutomated` → `AUBase::SetParameter` call-back inside `setParameter` | AU param echo | CHANGED — host-facing parameter changes are applied via the AU's `SetParameter`; no recursive call needed. |
 | `alert()` via CFUserNotification, `mkdir` via `system()` | 2012 UI | DROPPED — NSAlert/NSUserDefaults. |
 | `getNumMidiInputChannels=1` (RTMIDI) — host MIDI disabled | RtMidi did the MIDI | DROPPED — AU has no host-MIDI stream at all. |
-| `rand()`-based mute test animation, `srand(time(0))` | Demo | CHANGED — deterministic PRNG in TestModeAnimator (reproducible tests). |
+| `rand()`-based mute test animation, `srand(time(0))` | Demo | CHANGED — mutes removed from Test Mode entirely (brief §11); the fader wave is a deterministic pure function of time. |
 | `NoteOn→fader` experiment (commented out) | Experiment | DROPPED (already dead code). |
 | Pro Tools/VST-RTAS incompatibility note | Host limitation | n/a (documented as historical). |
 
@@ -91,9 +91,18 @@ Windows x86, also compiled with `MACAU` at some point), `Editor.cpp/h`,
 3. **Activation timing.** Old: entire activation burst (~200 messages) sent
    instantly. New: same bytes, same order, paced by the budget (≈0.5 s).
    Ordering is preserved; pacing protects the console's MIDI buffer.
-4. **Test Mode clock.** Old: driven by the audio loop at `sampleRate/25` and
-   `/10`. New: driven by the scheduler thread at 25/10 Hz (audio loop stays
-   pure). Values are quantized the same way; no host automation is written.
+4. **Test Mode.** Old: legacy TEST MODE ran a full `ResetAllMixer()`, set all
+   strips to READ(1), then animated faders at 25 Hz **and randomly toggled
+   mutes** at 10 Hz from the audio loop. New: a non-destructive, deterministic
+   phase-offset **traveling wave over faders only** (amplitude limited to
+   [0.2, 0.8], period 12 s, 4 waves across the console — mapping errors are
+   visually obvious). No reset, no snapshot, no mute traffic; strip modes are
+   moved to READ(1) for the duration (documented rationale: console-side write
+   activity stays off while the motors are driven) and **restored on exit**;
+   console reports during Test Mode are not forwarded to the host; the audio
+   loop stays pure and the normal protocol/scheduler path is used throughout.
+   Requires an activated console; stops immediately (queued positions are
+   canceled on exit).
 5. **Mode sweep scope** — see §3.
 6. **Configuration.** Old: `~/Library/Audio/Presets/GSi/...ini` port names.
    New: NSUserDefaults (port names by role) + optional profile plist.

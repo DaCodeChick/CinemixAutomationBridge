@@ -25,8 +25,8 @@ TEST_CASE("ring: bulk pop drains in order") {
     const uint8_t data[] = {1, 2, 3, 4, 5};
     for (size_t i = 0; i < 5; ++i) CHECK(r.push(data[i]));
     uint8_t out[8] = {0};
-    CHECK_EQ(r.popBulk(out, 8), size_t(5));
-    for (size_t i = 0; i < 5; ++i) CHECK_EQ(int(out[i]), int(data[i]));
+    CHECK_EQ(r.popBulk(out, 8), static_cast<size_t>(5));
+    for (size_t i = 0; i < 5; ++i) CHECK_EQ(static_cast<int>(out[i]), static_cast<int>(data[i]));
 }
 
 TEST_CASE("ring: overflow drops newest and is counted") {
@@ -54,7 +54,7 @@ TEST_CASE("ring: wrap-around integrity") {
             CHECK_EQ(v, round * 10 + i);
         }
     }
-    CHECK_EQ(r.available(), size_t(0));
+    CHECK_EQ(r.available(), static_cast<size_t>(0));
 }
 
 } // namespace

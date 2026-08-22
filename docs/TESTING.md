@@ -35,6 +35,14 @@ ctest --test-dir build --output-on-failure
 * **Legacy value semantics** — 7-bit truncation (`int(v*127)`), mute 2=OFF
   3=ON (non-3 ⇒ OFF), AUX 2n/2n+1, master default 1.0, dedupe keyed on the
   *parameter value* (legacy `prev_CC_Val`), not the wire byte.
+* **Test Mode correctness** — deterministic waveform (period, band limits,
+  phase offsets), engine-level: fader traffic only, **no mute commands**,
+  READ-mode sweep without any reset/snapshot side effects, mode restore on
+  exit, host-listener silence, activation requirement, echo silence.
+* **Quantization edge cases** — NaN/±infinity handling, legacy truncation
+  preserved, 7-bit round trips.
+* **Port identity** — channel-only decoding disambiguates both console ports
+  (see docs/ARCHITECTURE.md §7).
 * **Feedback-loop prevention** — console echoes of commanded positions are
   suppressed; hand moves are reported; a pending outbound target survives the
   console's report of the *previous* state; host-originated changes are never

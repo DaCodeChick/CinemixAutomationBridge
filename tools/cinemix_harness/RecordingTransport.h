@@ -23,8 +23,13 @@ public:
                             &RecordingTransport::onMalformed);
     }
 
-    bool send(uint8_t port, const cinemix::MidiMessage& message) override {
-        writer_.writeEvent(nowUs(), 1, port, message);
+    bool send(std::uint8_t port, const cinemix::MidiMessage& message) override {
+        cinemix::CaptureEvent event;
+        event.timestampUs = nowUs();
+        event.direction = 1;
+        event.port = port;
+        event.message = message;
+        writer_.writeEvent(event);
         return inner_.send(port, message);
     }
     bool connected() const override { return inner_.connected(); }
@@ -32,29 +37,38 @@ public:
 
     // Inbound bytes from the console side: record (direction 0) and forward
     // to the transport's consumer.
-    void deliverInbound(const uint8_t* data, size_t n) {
-        parser_.feed(data, n);
-        if (onIncoming) onIncoming(data, n);
+    void deliverInbound(const std::uint8_t* data, std::size_t size) {
+        parser_.feed(data, size);
+        if (onIncoming) onIncoming(data, size);
     }
 
 private:
-    static void onCc(void* user, uint8_t channel, uint8_t cc, uint8_t value) {
+    static void onCc(void* user, std::uint8_t channel, std::uint8_t cc, std::uint8_t value) {
         RecordingTransport* self = static_cast<RecordingTransport*>(user);
-        cinemix::MidiMessage m = cinemix::MidiMessage::controlChange(channel, cc, value, 0);
-        self->writer_.writeEvent(self->nowUs(), 0, 0, m);
+        cinemix::CaptureEvent event;
+        event.timestampUs = self->nowUs();
+        event.direction = 0;
+        event.port = 0; // source port is not known at the byte level
+        event.message = cinemix::MidiMessage::controlChange(channel, cc, value, 0);
+        self->writer_.writeEvent(event);
     }
-    static void onSystem(void* user, uint8_t status) {
+    static void onSystem(void* user, std::uint8_t status) {
         RecordingTransport* self = static_cast<RecordingTransport*>(user);
         if (status == 0xFF) {
-            cinemix::MidiMessage m = cinemix::MidiMessage::systemReset(0);
-            self->writer_.writeEvent(self->nowUs(), 0, 0, m);
+            cinemix::CaptureEvent event;
+            event.timestampUs = self->nowUs();
+            event.direction = 0;
+            event.port = 0;
+            event.message = cinemix::MidiMessage::systemReset(0);
+            self->writer_.writeEvent(event);
         }
     }
-    static void onMalformed(void* user) { (void)user; }
+    static void onMalformed(void* user) { static_cast<void>(user); }
 
-    uint64_t nowUs() const {
+    std::uint64_t nowUs() const {
         const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-        return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(now - start_).count());
+        return static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::microseconds>(now - start_).count());
     }
 
     cinemix::IMidiTransport& inner_;

@@ -1,5 +1,5 @@
 // MixerProfile — explicit description of a physical Cinemix configuration.
-// Portable C++11. No Apple/Windows dependencies.
+// Portable, conservative C++14. No Apple/Windows dependencies.
 //
 // The protocol layer and parameter map are built from this profile; console
 // assumptions must live here, not scattered through the code.
@@ -10,6 +10,7 @@
 #ifndef CINEMIX_MIXER_PROFILE_H
 #define CINEMIX_MIXER_PROFILE_H
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -21,26 +22,26 @@ namespace cinemix {
 // Interpretation of the two consecutive CC numbers each fader occupies.
 // SevenBit  = legacy-proven: send the even CC only; either CC read as a 7-bit
 //             position. FourteenBit = unverified: even=MSB, odd=LSB.
-enum class FaderResolution : uint8_t { SevenBit = 0, FourteenBit = 1 };
+enum class FaderResolution : std::uint8_t { SevenBit = 0, FourteenBit = 1 };
 
 struct MixerProfile {
     // ---- Geometry ---------------------------------------------------------
-    uint16_t loStrips = 24; // first N strips on port 1 ("LO")
-    uint16_t hiStrips = 12; // remaining strips + master section on port 2 ("HI")
-    std::vector<uint16_t> stereoStrips; // 0-based strip indices of stereo pairs
-                                        // (default {24,25,26,27} => strips 25..28)
+    std::uint16_t loStrips = 24; // first N strips on port 1 ("LO")
+    std::uint16_t hiStrips = 12; // remaining strips + master section on port 2 ("HI")
+    std::vector<std::uint16_t> stereoStrips; // 0-based strip indices of stereo pairs
+                                             // (default {24,25,26,27} => strips 25..28)
 
     bool hasMasterFader = true;
     bool hasJoystick1 = true;
     bool hasJoystick2 = true;
-    uint16_t auxMuteCount = 10; // 0..10
+    std::uint16_t auxMuteCount = 10; // 0..10
 
     // ---- Protocol scheme (hardware-fixed; documented, not assumed) --------
-    uint8_t loFaderChannel = 1;   // LO fader positions
-    uint8_t hiFaderChannel = 2;   // HI fader positions
-    uint8_t loControlChannel = 3; // LO mutes / touch / SEL
-    uint8_t hiControlChannel = 4; // HI mutes / touch / SEL
-    uint8_t masterChannel = 5;    // master fader/SEL, AUX mutes, remote mode
+    std::uint8_t loFaderChannel = 1;  // LO fader positions
+    std::uint8_t hiFaderChannel = 2;  // HI fader positions
+    std::uint8_t loControlChannel = 3; // LO mutes / touch / SEL
+    std::uint8_t hiControlChannel = 4; // HI mutes / touch / SEL
+    std::uint8_t masterChannel = 5;   // master fader/SEL, AUX mutes, remote mode
     // Joystick axes ride the HI fader channel (2); mutes/SEL the HI control
     // channel (4) — same as the legacy mapping.
 
@@ -49,45 +50,47 @@ struct MixerProfile {
     // Echo suppression: an untouched fader/axis report within this many 7-bit
     // steps of the last value we commanded is treated as a motor echo and is
     // not forwarded to the host (feedback-loop prevention). 0 disables.
-    uint8_t echoHysteresisSteps = 2;
+    std::uint8_t echoHysteresisSteps = 2;
 
     // ---- Outbound pacing --------------------------------------------------
-    uint32_t budgetMessagesPerSecond = 500; // scheduler cap (DIN 3-byte capacity ≈ 1040/s)
-    uint32_t schedulerTickMs = 1;           // worker tick granularity
+    std::uint32_t budgetMessagesPerSecond = 500; // scheduler cap (DIN 3-byte capacity ≈ 1040/s)
+    std::uint32_t schedulerTickMs = 1;           // worker tick granularity
 
     // ---- Names ------------------------------------------------------------
     std::string name = "Default (LO24/HI12, S1-S4)";
 
     // ---- Derived ----------------------------------------------------------
-    size_t stripCount() const { return size_t(loStrips) + size_t(hiStrips); }
-    size_t faderCount() const { return stripCount() * 2; }
-    size_t muteCount() const { return stripCount() * 2; }
+    constexpr std::size_t stripCount() const noexcept {
+        return static_cast<std::size_t>(loStrips) + static_cast<std::size_t>(hiStrips);
+    }
+    constexpr std::size_t faderCount() const noexcept { return stripCount() * 2u; }
+    constexpr std::size_t muteCount() const noexcept { return stripCount() * 2u; }
 
     // Parameter count for the default scheme: faders + mutes + AUX + joystick
     // axes + joystick mutes + master fader.
-    size_t paramCount() const {
-        size_t joys = (hasJoystick1 ? 1 : 0) + (hasJoystick2 ? 1 : 0);
-        return faderCount() + muteCount() + auxMuteCount + 2 * joys + joys +
-               (hasMasterFader ? 1 : 0);
+    constexpr std::size_t paramCount() const noexcept {
+        const std::size_t joys = (hasJoystick1 ? 1u : 0u) + (hasJoystick2 ? 1u : 0u);
+        return faderCount() + muteCount() + static_cast<std::size_t>(auxMuteCount) +
+               2u * joys + joys + (hasMasterFader ? 1u : 0u);
     }
 
-    ConsoleSide sideOfStrip(size_t strip /*0-based*/) const {
+    constexpr ConsoleSide sideOfStrip(std::size_t strip) const noexcept {
         return strip < loStrips ? ConsoleSide::Lo : ConsoleSide::Hi;
     }
     // 0-based index of the strip within its side.
-    size_t withinSide(size_t strip) const {
+    constexpr std::size_t withinSide(std::size_t strip) const noexcept {
         return strip < loStrips ? strip : strip - loStrips;
     }
 
-    bool isStereoStrip(size_t strip) const {
-        for (size_t i = 0; i < stereoStrips.size(); ++i)
+    bool isStereoStrip(std::size_t strip) const {
+        for (std::size_t i = 0; i < stereoStrips.size(); ++i)
             if (stereoStrips[i] == strip) return true;
         return false;
     }
 
-    // Human label for a strip: "M1".. or "S1".. — mono numbering skips the
+    // Human label for a strip: "M01".. or "S1".. — mono numbering skips the
     // stereo strips exactly like the legacy plugin did.
-    std::string stripLabel(size_t strip) const;
+    std::string stripLabel(std::size_t strip) const;
 
     // The legacy author's console. Reproduces legacy parameter IDs 0..160.
     static MixerProfile legacyDefault();

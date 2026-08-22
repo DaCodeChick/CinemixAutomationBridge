@@ -95,9 +95,12 @@ OSStatus CinemixAU::GetParameterInfo(AudioUnitScope inScope, AudioUnitParameterI
     } else {
         outInfo.unit = kAudioUnitParameterUnit_Generic;
     }
-    // Name (host parameter lists).
+    // Name (host parameter lists). Ownership contract: the Audio Unit
+    // allocates outInfo.name (CFBridgingRetain) and the HOST releases it
+    // after reading GetParameterInfo — standard AUv2 parameter metadata
+    // semantics. REQUIRES LOGIC VALIDATION (brief §28).
     NSString* name = [NSString stringWithUTF8String:info.name.c_str()];
-    outInfo.name = (CFStringRef)CFBridgingRetain(name);
+    outInfo.name = static_cast<CFStringRef>(CFBridgingRetain(name));
     outInfo.flags |= kAudioUnitParameterFlag_HasName;
     return noErr;
 }
@@ -117,7 +120,8 @@ OSStatus CinemixAU::SetParameter(AudioUnitParameterID inID, AudioUnitScope inSco
     if (inScope != kAudioUnitScope_Global || inElement != 0) return kAudioUnitErr_InvalidParameter;
     if (inID >= engine_->parameterCount()) return kAudioUnitErr_InvalidParameter;
     // Real-time safe: atomic store + lock-free enqueue (never allocates).
-    engine_->setHostParameter(inID, static_cast<float>(inValue));
+    engine_->setHostParameter(static_cast<cinemix::ParamId>(inID),
+                              static_cast<float>(inValue));
     return noErr;
 }
 
@@ -157,6 +161,9 @@ OSStatus CinemixAU::GetPropertyInfo(AudioUnitPropertyID inID, AudioUnitScope inS
 OSStatus CinemixAU::GetProperty(AudioUnitPropertyID inID, AudioUnitScope inScope,
                                 AudioUnitElement inElement, void* outData) {
     if (inID == kAudioUnitProperty_CocoaUI && inScope == kAudioUnitScope_Global) {
+        // Ownership contract: the AU creates both CF objects (Copy = owned by
+        // the caller of the property); the HOST releases them after
+        // instantiating the view. We must NOT release them here.
         AudioUnitCocoaViewInfo* viewInfo = static_cast<AudioUnitCocoaViewInfo*>(outData);
         CFBundleRef bundle = CFBundleGetBundleWithIdentifier(kBundleIdentifier);
         if (!bundle) return kAudioUnitErr_InvalidPropertyValue;
@@ -179,9 +186,13 @@ OSStatus CinemixAU::SetProperty(AudioUnitPropertyID inID, AudioUnitScope inScope
                                 UInt32 inDataSize) {
     if (inID == kAudioUnitProperty_ParameterListener) {
         // AudioUnitAddParameterListener / AudioUnitRemoveParameterListener
-        // both arrive here with an AudioUnitParameterListenerBookkeeping.
-        // Heuristic: a triple already present is removed, otherwise added —
-        // add-then-remove of the same triple is therefore idempotent.
+        // both set this property with an AudioUnitParameterListenerBookkeeping
+        // (identical structs); the classic AUBase SDK provides no other
+        // authoritative mechanism, so the add/remove distinction is a
+        // heuristic: a {param, proc, refCon} triple already present is
+        // removed, otherwise added — add-then-remove of the same triple is
+        // idempotent. REQUIRES LOGIC VALIDATION (brief §28): verify that
+        // Logic's touch-automation recording follows these notifications.
         if (inDataSize != sizeof(AudioUnitParameterListenerBookkeeping))
             return kAudioUnitErr_InvalidPropertyValue;
         const AudioUnitParameterListenerBookkeeping* bk =
