@@ -26,7 +26,7 @@ maintainable **C++14 core + Objective-C++ AUv2/CoreMIDI/AppKit** plugin for a
 
 ## Status (honest)
 
-* **Portable core + tests: built and passing on Linux** (93 test cases:
+* **Portable core + tests: built and passing on Linux** (94 test cases:
   protocol gold data, parser robustness, legacy parameter layout, scheduler,
   engine with byte-exact activation/deactivation sequences, echo suppression,
   feedback-loop prevention, capture/replay).

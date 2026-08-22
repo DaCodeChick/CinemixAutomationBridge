@@ -79,13 +79,18 @@ void TransmissionScheduler::enqueueHigh(const OutboundCommand& command) {
 }
 
 void TransmissionScheduler::enqueuePosition(ParamId param, const MidiMessage& message) {
-    // Latest-wins coalescing: remove any earlier pending update for the same
-    // parameter (scan from the tail; the first hit is the newest).
-    for (std::deque<Entry>::reverse_iterator it = main_.rbegin(); it != main_.rend(); ++it) {
+    // Latest-wins coalescing: a new logical position for a parameter
+    // supersedes EVERY pending entry for it — both the coarse component and
+    // any PositionFine continuation of the previous update. Removing only the
+    // newest entry would strand the previous coarse CC and let repeated
+    // 14-bit updates grow the lane past its cap (exposed by the saturation
+    // regression test).
+    for (std::deque<Entry>::iterator it = main_.begin(); it != main_.end();) {
         if (it->cmd.param == param) {
-            main_.erase(std::next(it).base());
+            it = main_.erase(it);
             ++coalesced_;
-            break;
+        } else {
+            ++it;
         }
     }
     OutboundCommand command;

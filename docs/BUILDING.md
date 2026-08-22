@@ -4,7 +4,7 @@
 
 | Component | Language | Standard | Builds on | Status |
 | --- | --- | --- | --- | --- |
-| `core/` (portable Cinemix core) | C++14 | C++14 | Linux/macOS | **built and tested on Linux (93 test cases)** |
+| `core/` (portable Cinemix core) | C++14 | C++14 | Linux/macOS | **built and tested on Linux (94 test cases)** |
 | `tools/cinemix_harness` | C++14 | C++14 | Linux/macOS | **built and tested on Linux** |
 | `mac/` AUv2 component (includes SDK headers) | ObjC++ | gnu++17 | macOS only | **implemented; compile/validate on the target Mac** |
 | `mac/` CoreMIDI/Config/AppKit glue | ObjC++ | C++14 | macOS only | **implemented; compile/validate on the target Mac** |

@@ -221,6 +221,49 @@ TEST_CASE("scheduler: cancelAllPositions removes 14-bit components too") {
     CHECK_EQ(static_cast<int>(f.transport.sentToPort1[0].data[1]), 64);
 }
 
+TEST_CASE("scheduler: queue saturation with 14-bit position traffic") {
+    Fixture f;
+    // Repeated 14-bit updates for many parameters: coalescing keeps the lane
+    // bounded (≤ 2 entries per actively-updated param), so the cap is only
+    // reachable by stacking commands on top. Drops are counted, positions
+    // stay cancellable, and the safety-critical reset is always admitted.
+    for (int round = 0; round < 10; ++round) {
+        for (int param = 0; param < 161; ++param) {
+            const uint8_t coarseCc = static_cast<uint8_t>(2 * param);
+            const uint8_t fineCc = static_cast<uint8_t>(2 * param + 1);
+            f.sched.enqueuePosition(static_cast<ParamId>(param),
+                                    MidiMessage::controlChange(1, coarseCc, 63, 1));
+            f.sched.enqueuePositionContinuation(static_cast<ParamId>(param),
+                                                MidiMessage::controlChange(1, fineCc, 127, 1));
+        }
+    }
+    // Stack commands to reach the cap.
+    for (int i = 0; i < 900; ++i) f.sched.enqueueCommand(cmd(3, 64, 1));
+    CHECK(f.sched.pending() <= 1024);
+    CHECK(f.sched.droppedTotal() > 0);
+
+    // The release byte is admitted even with a saturated lane.
+    OutboundCommand reset;
+    reset.kind = CommandKind::SystemReset;
+    reset.message = MidiMessage::systemReset(0);
+    f.sched.enqueueCommand(reset);
+
+    // Global cancellation removes EVERY pending position component (coarse
+    // AND fine); only commands plus the reset may transmit.
+    f.sched.cancelAllPositions();
+    f.sched.drainToEmpty();
+
+    bool leakedFineComponent = false;
+    for (size_t i = 0; i < f.transport.sentToPort1.size(); ++i) {
+        const MidiMessage& m = f.transport.sentToPort1[i];
+        const bool isOddPositionCc =
+            (m.data[0] == 0xB0) && ((m.data[1] & 0x01u) != 0) && (m.data[1] != 64);
+        if (isOddPositionCc) leakedFineComponent = true;
+    }
+    CHECK(!leakedFineComponent);
+    CHECK(f.transport.sentToPort1.back().isSystemReset());
+}
+
 TEST_CASE("scheduler: system reset passes through as a 1-byte message") {
     Fixture f;
     OutboundCommand c;

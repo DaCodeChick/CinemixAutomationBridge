@@ -479,3 +479,90 @@ separate connect step — `connected()` gates activation).
 * macOS/AU/CoreMIDI/Logic/hardware items remain IMPLEMENTED and explicitly
   marked TARGET-MAC TEST REQUIRED — nothing is claimed as HARDWARE/LOGIC/
   TARGET-MAC TESTED.
+
+
+---
+
+# Final Known-Issues Closure Pass
+
+Concise record of the final closure verification. Each item was re-verified
+against the CURRENT source (previous audit notes were not treated as
+evidence).
+
+## 1. workerRunning_ synchronization — ALREADY RESOLVED (verified)
+**Correction (present in source):** `std::atomic<bool> workerRunning_{false}`
+with acquire/release access at every site; `stopRequested_` remains plain bool
+under `cmdMu_`; repeated start/stop/destroy stress test exists.
+**Regression test:** `engine: repeated start/stop/destroy is race-free`;
+engine suite (27 cases) ThreadSanitizer-clean on Linux.
+**Target validation still required:** none (portable).
+
+## 2. CoreMIDI callback teardown vs engine lifetime — ALREADY RESOLVED (verified)
+**Correction (present in source):** `IMidiTransport::stopInbound()` (dispose
+input port) runs FIRST in the engine destructor, then `onIncoming` is
+detached, then the safety deactivation uses the still-alive outbound path;
+`CoreMidiTransport::shutdown()` reuses `stopInbound()`.
+**Regression test:** FakeTransport simulates post-stopInbound quiescence
+(no inbound delivery after stop).
+**Target validation still required:** CoreMIDI's actual disposed-port
+callback-quiescence guarantee (TARGET-MAC TEST REQUIRED).
+
+## 3. CaptureWriter structural validity — ALREADY RESOLVED (verified)
+**Correction (present in source):** `isValidDirection`/`isValidPort`/
+`isValidPayloadLength` are the single source of truth used by both writer
+and decoder; `writeEvent` skips structurally invalid records (caller bug,
+not I/O failure).
+**Regression tests:** writer-rejects-invalid-direction/port/length round
+trip; zero-length Malformed; valid round trip.
+
+## 4. CaptureWriter copy/move contract — ALREADY RESOLVED (verified)
+**Correction (present in source):** copy AND move explicitly `= delete`d for
+writer and reader; comments describe the actual C++14 behavior.
+**Regression test:** `static_assert(!std::is_copy/move_constructible...)`.
+
+## 5. 14-bit fine-CC cancellation — ALREADY RESOLVED + NEW DEFECT FOUND AND FIXED
+**Correction (present in source):** `CommandKind::PositionFine` +
+`enqueuePositionContinuation(param, …)` keeps the `ParamId`; the fine CC is
+cancelled with its coarse component and never masquerades as `SetMode`.
+**New defect found by this pass's saturation test:** `enqueuePosition`
+coalescing removed only the NEWEST matching entry, so repeated 14-bit updates
+stranded the previous coarse CC and position traffic could grow the main lane
+past its cap. **Fix:** a new logical position now supersedes ALL pending
+entries for its parameter (full scan-and-remove), keeping the lane bounded by
+2 × paramCount for position traffic. Legacy 14-bit bytes/order unchanged.
+**Regression tests:** normal 14-bit transmission + ordering, cancelPosition
+removes both components, cancelAllPositions removes both, cancellation
+isolation, NEW saturation test (161 params × 10 rounds + command stacking:
+cap respected, drops counted, SystemReset admitted, zero fine-CC leakage
+after global cancellation).
+
+## 6. selectInputs() return semantics — ALREADY RESOLVED (verified)
+**Correction (present in source):** returns true only when every non-empty
+requested input is found AND `MIDIPortConnectSource` succeeded; failures log
+the OSStatus and leave `src_ = 0`; contract documented in the header.
+**Target validation still required:** CoreMIDI connect-failure paths
+(macOS only).
+
+## 7. Stale host-threading comments — ALREADY RESOLVED (verified)
+No "lock-free enqueue/push", "host event queue" or SPSC-host wording remains
+in first-party docs/comments; the atomic value + dirty-flag design is
+described.
+
+## 8. C++14 documentation consistency — ALREADY RESOLVED (verified)
+No first-party C++11 claims remain; CMake/Makefile/docs/README all state
+C++14 (vendor SDK requirements kept separate).
+
+## 9. HostBridge lifetime — VERIFIED CORRECT (no change)
+The AU destructor body destroys `engine_` first (engine destructor joins the
+worker and detaches the listener) while `hostBridge_` is still alive;
+`hostBridge_` is destroyed only afterwards by member destruction. Left
+nested; the non-owning `CinemixAU* au_` pointer was kept (reference
+conversion would be churn without changing the invariant).
+
+## Verification
+* 94 test cases across 8 suites, all passing (Linux, gcc 16, C++14, zero
+  warnings under the first-party warning set).
+* ASan/UBSan clean on every suite; ThreadSanitizer clean on the engine suite.
+* Harness selftest, capture/replay, demo: passing.
+* No TARGET-MAC / LOGIC / HARDWARE TESTED claim is made; all Apple-side
+  contracts remain explicitly marked for target validation.
