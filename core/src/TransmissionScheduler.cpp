@@ -11,6 +11,8 @@ namespace {
 constexpr double kMaxBurst = 8.0;
 // Rate-limit the "transport rejected" warning.
 constexpr std::size_t kTransportFailureWarningLimit = 8;
+// Rate-limit the "queue full" warning.
+constexpr std::size_t kQueueFullWarningLimit = 4;
 } // namespace
 
 TransmissionScheduler::TransmissionScheduler(const MixerProfile& profile,
@@ -24,12 +26,33 @@ TransmissionScheduler::TransmissionScheduler(const MixerProfile& profile,
 }
 
 void TransmissionScheduler::enqueueCommand(const OutboundCommand& command) {
+    if (main_.size() >= kMaxQueuedCommands) {
+        if (command.kind == CommandKind::SystemReset) {
+            // The release byte is safety-critical: it must always be sent,
+            // even if that means evicting an older queued command.
+            main_.pop_front();
+        } else {
+            ++dropped_;
+            if (dropped_ <= kQueueFullWarningLimit)
+                diag_.warning("outbound queue full — command dropped");
+            return;
+        }
+    }
     Entry entry;
     entry.cmd = command;
     main_.push_back(entry);
 }
 
 void TransmissionScheduler::enqueueHigh(const OutboundCommand& command) {
+    if (high_.size() >= kMaxQueuedCommands) {
+        // Touch mode replies are absolute state: dropping the newest one is
+        // safe (the next reply supersedes it). Never evict older replies —
+        // ordering within the high lane is part of the touch state machine.
+        ++dropped_;
+        if (dropped_ <= kQueueFullWarningLimit)
+            diag_.warning("high-priority queue full — reply dropped");
+        return;
+    }
     Entry entry;
     entry.cmd = command;
     high_.push_back(entry);
@@ -46,7 +69,7 @@ void TransmissionScheduler::enqueuePosition(ParamId param, const MidiMessage& me
         }
     }
     OutboundCommand command;
-    command.kind = CommandKind::SetMode; // irrelevant for positions
+    command.kind = CommandKind::PositionUpdate;
     command.message = message;
     command.param = param;
     Entry entry;

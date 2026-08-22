@@ -27,8 +27,11 @@ static const CGFloat kPanelHeight = 420;
     NSTextView* _log;
     NSTimer* _timer;
 
-    std::deque<std::string>* _pendingLog;
+    // C++ value member (RAII): no manual new/delete; the ObjC runtime calls
+    // the C++ destructor during -dealloc under ARC.
+    std::deque<std::string> _pendingLog;
     NSLock* _logLock;
+    NSButton* _testFadersButton;
 
     BOOL _sinkInstalled;
 }
@@ -51,7 +54,6 @@ static const CGFloat kPanelHeight = 420;
 - (instancetype)initWithFrame:(NSRect)frame audioUnit:(AudioUnit)au {
     if ((self = [super initWithFrame:frame]) == nil) return nil;
     _au = au;
-    _pendingLog = new std::deque<std::string>();
     _logLock = [[NSLock alloc] init];
     _sinkInstalled = NO;
     memset(&_ctx, 0, sizeof(_ctx));
@@ -81,19 +83,33 @@ static const CGFloat kPanelHeight = 420;
         _sinkInstalled = YES;
     }
 
+    // Block-based timer with a weak capture: the timer does not retain the
+    // view, so -dealloc can run and invalidate it. 0.5 s endpoint
+    // re-enumeration is deliberate: the UI's topology refresh is
+    // polling-based (docs/ARCHITECTURE.md §7) — there is no CoreMIDI
+    // notification callback API to hook, and re-enumerating a handful of
+    // endpoints twice a second is trivial on the target hardware.
+    __weak CinemixCocoaView* weakSelf = self;
     _timer = [NSTimer scheduledTimerWithTimeInterval:0.5
-                                              target:self
-                                            selector:@selector(refresh:)
-                                            userInfo:nil
-                                             repeats:YES];
+                                             repeats:YES
+                                               block:^(NSTimer* timer) {
+        [weakSelf refresh:timer];
+    }];
     [self refresh:nil];
     return self;
 }
 
+- (void)viewWillMoveToWindow:(NSWindow*)newWindow {
+    // AppKit lifetime hook: when the panel leaves its window the refresh
+    // timer must stop even if -dealloc is delayed.
+    if (newWindow == nil) [_timer invalidate];
+    [super viewWillMoveToWindow:newWindow];
+}
+
 - (void)appendLogLine:(const char*)line {
     [_logLock lock];
-    if (_pendingLog->size() > 500) _pendingLog->pop_front(); // bounded tail
-    _pendingLog->push_back(std::string(line));
+    if (_pendingLog.size() > 500) _pendingLog.pop_front(); // bounded tail
+    _pendingLog.push_back(std::string(line));
     [_logLock unlock];
 }
 
@@ -124,12 +140,12 @@ static const CGFloat kPanelHeight = 420;
     [self placeButton:reset atX:315 y:1 width:90];
     NSButton* mutes = [NSButton buttonWithTitle:@"All Mutes" target:self action:@selector(onAllMutes:)];
     [self placeButton:mutes atX:410 y:1 width:90];
-    NSButton* test = [[NSButton alloc] initWithFrame:NSMakeRect(10, 26, 110, 28)];
-    [test setButtonType:NSPushOnPushOffButton];
-    [test setTitle:@"Test Mode"];
-    [test setTarget:self];
-    [test setAction:@selector(onTestMode:)];
-    [self addSubview:test];
+    _testFadersButton = [[NSButton alloc] initWithFrame:NSMakeRect(10, 26, 130, 28)];
+    [_testFadersButton setButtonType:NSPushOnPushOffButton];
+    [_testFadersButton setTitle:@"Test Faders"]; // operator-facing: this moves real motors
+    [_testFadersButton setTarget:self];
+    [_testFadersButton setAction:@selector(onTestMode:)];
+    [self addSubview:_testFadersButton];
 
     // --- Diagnostics level ---
     [self addSubview:[self label:@"Log:" atX:130]];
@@ -274,12 +290,18 @@ static const CGFloat kPanelHeight = 420;
         [self repopulate:_out2 withNames:outs selected:cinemix_mac::config::output2Name()];
     }
     if (_ctx.engine) {
+        const bool faderTestActive = _ctx.engine->testMode();
         NSString* state = _ctx.engine->isActivated()
-            ? (_ctx.engine->testMode() ? @"ACTIVE — test mode" : @"ACTIVE")
+            ? (faderTestActive ? @"ACTIVE — fader test running" : @"ACTIVE")
             : @"standby (console released)";
         NSString* conn = (_ctx.transport && _ctx.transport->connected())
             ? @"outputs connected" : @"outputs NOT connected";
         [_status setStringValue:[NSString stringWithFormat:@"%@ — %@", state, conn]];
+        // Explicit operator-facing state: the toggle reads "Stop Fader Test"
+        // while the oscillator drives physical motors.
+        [_testFadersButton setTitle:faderTestActive ? @"Stop Fader Test" : @"Test Faders"];
+        if ([_testFadersButton state] != (faderTestActive ? NSOnState : NSOffState))
+            [_testFadersButton setState:faderTestActive ? NSOnState : NSOffState];
     }
     [self drainLog];
 }
@@ -301,9 +323,9 @@ static const CGFloat kPanelHeight = 420;
 
 - (void)drainLog {
     [_logLock lock];
-    while (!_pendingLog->empty()) {
-        std::string line = _pendingLog->front();
-        _pendingLog->pop_front();
+    while (!_pendingLog.empty()) {
+        std::string line = _pendingLog.front();
+        _pendingLog.pop_front();
         [_logLock unlock];
         NSDictionary* attrs = @{ NSFontAttributeName : [NSFont fontWithName:@"Menlo" size:10] };
         NSAttributedString* s = [[NSAttributedString alloc]
@@ -319,13 +341,15 @@ static const CGFloat kPanelHeight = 420;
 // ---------------------------------------------------------------------------
 
 - (void)dealloc {
+    // Timer uses a weak capture, so dealloc can run; invalidate anyway.
     [_timer invalidate];
     if (_sinkInstalled && _ctx.diag) {
         // Restore the AU's default os_log sink so diagnostics keep flowing
-        // after the panel closes.
+        // after the panel closes. Diagnostics::setSink is mutex-guarded and
+        // waits for any in-flight log call, so no sink invocation can touch
+        // this view after this point.
         cinemix_mac::config::installDefaultLogSink(*_ctx.diag);
     }
-    delete _pendingLog;
 }
 
 @end

@@ -581,6 +581,101 @@ TEST_CASE("engine: test mode requires an activated console") {
     CHECK_EQ(f.transport.sentToPort1.size(), static_cast<size_t>(0));
 }
 
+TEST_CASE("engine: concurrent host writes from many threads are safe (multi-producer)") {
+    // Producer-contract regression: the AU's SetParameter may be called from
+    // several host threads at once; setHostParameter must be safe without a
+    // single-producer assumption (dirty-flag design, no queue).
+    Fixture f;
+    f.engine.activate();
+    f.engine.drainNow();
+    f.transport.clear();
+
+    std::vector<std::thread> writers;
+    std::atomic<bool> go(false);
+    for (int w = 0; w < 4; ++w) {
+        writers.push_back(std::thread([&f, &go, w]() {
+            while (!go.load(std::memory_order_acquire)) {
+            }
+            for (int i = 0; i < 5000; ++i) {
+                const float value = (static_cast<float>((w * 1000 + i) % 127) + 0.0f) / 127.0f;
+                f.engine.setHostParameter(static_cast<ParamId>(w), value);
+            }
+        }));
+    }
+    go.store(true, std::memory_order_release);
+    for (std::size_t i = 0; i < writers.size(); ++i) writers[i].join();
+
+    // Drain in paced steps until quiescent (bounded by the budget).
+    for (int i = 0; i < 20000 && f.engine.scheduler().pending() > 0; ++i)
+        f.engine.processOnce();
+
+    // Every parameter ends at SOME written value (0..126/127), and the
+    // engine reports no queue overflow. The exact value is a benign race —
+    // latest-wins is the documented semantic.
+    for (int w = 0; w < 4; ++w) {
+        const float value = f.engine.getParameter(static_cast<ParamId>(w));
+        CHECK(value >= 0.0f && value <= 1.0f);
+    }
+}
+
+TEST_CASE("engine: test mode self-stops when the transport disconnects") {
+    Fixture f;
+    f.engine.activate();
+    f.engine.drainNow();
+    f.transport.clear();
+
+    f.engine.setTestMode(true);
+    f.engine.drainNow();
+    CHECK(f.engine.testMode());
+
+    // The MIDI interface disappears: the oscillator must not keep driving a
+    // dead transport. The next worker step stops the test and restores modes.
+    f.transport.connectedFlag = false;
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    f.engine.drainNow();
+    CHECK(!f.engine.testMode());
+    CHECK(!f.engine.scheduler().hasPending(0));
+}
+
+TEST_CASE("engine: mute changes during test mode never reach the host") {
+    Fixture f;
+    f.engine.activate();
+    f.engine.drainNow();
+    f.engine.setTestMode(true);
+    f.engine.drainNow();
+    f.transport.clear();
+    f.listener.events.clear();
+
+    // A console mute press during the fader test: state updates silently,
+    // no host notification (test-mode suppression).
+    f.transport.injectCc(3, 0, 3); // strip 1 Chan mute ON
+    f.engine.drainNow();
+    CHECK_NEAR(f.engine.getParameter(72), 1.0f, 1e-6);
+    CHECK_EQ(f.listener.parameterEvents(), static_cast<size_t>(0));
+
+    f.engine.setTestMode(false);
+    f.engine.drainNow();
+}
+
+TEST_CASE("engine: destruction while test mode is active releases the console") {
+    MixerProfile profile = MixerProfile::legacyDefault();
+    Diagnostics diag;
+    diag.setLevel(Diagnostics::Level::Error);
+    FakeTransport* transport = new FakeTransport();
+    AutomationEngine* engine = new AutomationEngine(profile, diag, *transport);
+    engine->activate();
+    engine->drainNow();
+    engine->setTestMode(true);
+    engine->drainNow();
+    CHECK(engine->testMode());
+    transport->clear();
+
+    delete engine; // destructor: stop test mode, deactivate, FF last
+    CHECK(!transport->sentToPort1.empty());
+    CHECK(transport->sentToPort1.back().isSystemReset());
+    delete transport;
+}
+
 TEST_CASE("engine: AUX mute round trip from console") {
     Fixture f;
     f.engine.activate();

@@ -78,7 +78,7 @@ console is in remote mode; deactivate first.
 | Send Snapshot | re-send the full parameter state (and write it into Logic automation where recording) |
 | Reset All | all faders to −∞, mutes off, master to max, everything to AUTO |
 | All Mutes | toggle every mute (channel, AUX, joysticks) |
-| Test Mode | non-destructive live fader diagnostic: a slow phase-offset traveling wave across the motorized faders (no mutes). Requires an activated console; restores strip modes when switched off. Do not run it during automation recording. |
+| Test Faders | non-destructive live fader diagnostic: a slow phase-offset traveling wave across the motorized faders (no mutes). Requires an activated console; restores strip modes when switched off; stops itself if the MIDI connection disappears. Do not run it during automation recording. |
 
 ## 6. Console configuration (mixer profile)
 

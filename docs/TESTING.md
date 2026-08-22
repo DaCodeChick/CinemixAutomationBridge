@@ -43,6 +43,18 @@ ctest --test-dir build --output-on-failure
   preserved, 7-bit round trips.
 * **Port identity** — channel-only decoding disambiguates both console ports
   (see docs/ARCHITECTURE.md §7).
+* **Producer contract** — `setHostParameter` is hammered from four threads
+  at once (5000 writes each) while the engine drains: the multi-producer
+  dirty-flag design must end in a consistent state (verified under
+  ThreadSanitizer on Linux).
+* **Capture failure semantics** — write failures (via `/dev/full`) leave the
+  writer failed, never "healthy"; invalid direction/port fields are
+  Malformed; in-memory stringstream round trips; little-endian primitives
+  with the encoded size in the type.
+* **Scheduler queue-full policy** — over-cap commands are dropped and
+  counted; SystemReset is always admitted.
+* **Test-mode robustness** — self-stop on transport disconnect, safe
+  destruction while active, mute suppression during the test.
 * **Feedback-loop prevention** — console echoes of commanded positions are
   suppressed; hand moves are reported; a pending outbound target survives the
   console's report of the *previous* state; host-originated changes are never

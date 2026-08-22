@@ -74,11 +74,21 @@ public:
     void setListener(Listener* listener) { listener_ = listener; }
 
     // ---- Host-facing, real-time safe --------------------------------------
+    // PRODUCER CONTRACT (resolved by audit): safe to call from MULTIPLE
+    // threads concurrently (the AUv2 host may call SetParameter from its
+    // audio thread and from other threads at the same time). Implemented as
+    // two atomic stores per call — a value plus a per-parameter dirty flag
+    // that the worker scans every tick — so there is no queue and no
+    // producer-count assumption. Wait-free, allocation-free, latest-wins.
     void setHostParameter(ParamId param, float value);
     float getParameter(ParamId param) const;
     std::size_t parameterCount() const { return paramMap_.size(); }
 
     // ---- Transport-facing, real-time safe ---------------------------------
+    // PRODUCER CONTRACT: exactly ONE producer at a time — the transport's
+    // incoming callback (CoreMIDI invokes a port's read proc serially on its
+    // internal thread; the harness/tests inject from a single thread).
+    // The SPSC byte ring depends on this invariant.
     void handleIncoming(const std::uint8_t* data, std::size_t size);
 
     // ---- UI-facing commands (marshaled to the worker) ---------------------
@@ -114,14 +124,8 @@ public:
     bool processOnce();
 
 private:
-    struct HostEvent {
-        ParamId param;
-        float value;
-    };
-
     // Queue geometry (documented bounds; overflow is counted, never fatal).
     static constexpr std::size_t kInboundQueueBytes = 65536;
-    static constexpr std::size_t kHostEventQueueCapacity = 1024;
     static constexpr std::size_t kInboundDrainBatch = 512;
     // Test-mode oscillator recomputation throttle: 20 Hz is plenty for a
     // 12-second wave; the scheduler coalesces anything beyond the budget.
@@ -163,6 +167,11 @@ private:
 
     // Parameter state.
     std::unique_ptr<std::atomic<float>[]> values_;
+    // Multi-producer host-write dirty flags (one atomic per parameter):
+    // SetParameter stores the value, then sets the flag with release
+    // ordering; the worker exchanges the flag to 0 (acquire) and processes
+    // the latest value. No queue, no producer-count assumption.
+    std::vector<std::atomic<std::uint8_t>> hostDirty_;
     // Worker-only. lastProcessed_ = last value through the engine for this
     // parameter (any origin) — the legacy prev_CC_Val dedupe reference.
     // lastCommanded_ = last value we commanded the console (outbound) — the
@@ -180,11 +189,9 @@ private:
     std::chrono::steady_clock::time_point testStart_;
     std::chrono::steady_clock::time_point lastOscillatorStep_;
 
-    // Inbound (transport → worker).
+    // Inbound MIDI bytes (transport → worker): SPSC — single producer by
+    // contract, see handleIncoming.
     SpScRingBuffer<MidiByte> inbound_;
-
-    // Host parameter writes (audio thread → worker).
-    SpScRingBuffer<HostEvent> hostEvents_;
 
     // Command queue (UI thread → worker).
     std::mutex cmdMu_;

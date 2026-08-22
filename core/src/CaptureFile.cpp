@@ -13,38 +13,16 @@ constexpr std::uint32_t kVersion = 1;
 
 namespace capture_detail {
 
-void writeU32Le(std::uint8_t* out, std::uint32_t value) noexcept {
-    for (int i = 0; i < 4; ++i)
-        out[i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFu);
-}
-
-void writeU64Le(std::uint8_t* out, std::uint64_t value) noexcept {
-    for (int i = 0; i < 8; ++i)
-        out[i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFu);
-}
-
-std::uint32_t readU32Le(const std::uint8_t* in) noexcept {
-    std::uint32_t value = 0;
-    for (int i = 0; i < 4; ++i)
-        value |= static_cast<std::uint32_t>(in[i]) << (8 * i);
-    return value;
-}
-
-std::uint64_t readU64Le(const std::uint8_t* in) noexcept {
-    std::uint64_t value = 0;
-    for (int i = 0; i < 8; ++i)
-        value |= static_cast<std::uint64_t>(in[i]) << (8 * i);
-    return value;
-}
-
 EncodedRecord encodeRecord(const CaptureEvent& event) {
     EncodedRecord record;
-    writeU64Le(record.bytes.data(), event.timestampUs);
+    const std::array<std::uint8_t, 8> timestamp = encodeU64Le(event.timestampUs);
+    for (std::size_t i = 0; i < timestamp.size(); ++i) record.bytes[i] = timestamp[i];
     record.bytes[8] = event.direction;
     record.bytes[9] = event.port;
     const std::uint8_t length = event.message.length > 3 ? 3 : event.message.length;
     record.bytes[10] = length;
-    for (std::uint8_t i = 0; i < length; ++i) record.bytes[11 + i] = event.message.data[i];
+    for (std::uint8_t i = 0; i < length; ++i)
+        record.bytes[11 + i] = event.message.data[i];
     record.length = static_cast<std::uint8_t>(kRecordHeaderSize + length);
     return record;
 }
@@ -55,20 +33,29 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept 
     result.consumed = 0;
     if (size < kRecordHeaderSize) return result;
 
+    // Complete field validation — Malformed means what it says.
+    const std::uint8_t direction = data[8];
+    const std::uint8_t port = data[9];
     const std::uint8_t length = data[10];
-    if (length > 3) {
+    const bool directionValid =
+        (direction == kDirectionInbound || direction == kDirectionOutbound);
+    const bool portValid = (port == kPortBroadcast || port == kPortLo || port == kPortHi);
+    if (!directionValid || !portValid || length > 3) {
         result.status = DecodeStatus::Malformed;
         return result;
     }
-    if (size < kRecordHeaderSize + length) return result; // truncated
+    if (size < kRecordHeaderSize + length) return result; // truncated payload
 
-    result.event.timestampUs = readU64Le(data);
-    result.event.direction = data[8];
-    result.event.port = data[9];
+    std::array<std::uint8_t, 8> timestampBytes{};
+    for (std::size_t i = 0; i < timestampBytes.size(); ++i) timestampBytes[i] = data[i];
+    result.event.timestampUs = decodeU64Le(timestampBytes);
+    result.event.direction = direction;
+    result.event.port = port;
     result.event.message.length = length;
-    result.event.message.port = data[9];
+    result.event.message.port = port;
     result.event.message.data = {};
-    for (std::uint8_t i = 0; i < length; ++i) result.event.message.data[i] = data[11 + i];
+    for (std::uint8_t i = 0; i < length; ++i)
+        result.event.message.data[i] = data[11 + i];
     result.consumed = kRecordHeaderSize + length;
     result.status = DecodeStatus::Ok;
     return result;
@@ -79,97 +66,129 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept 
 // ---------------------------------------------------------------------------
 // Writer
 
-CaptureWriter::CaptureWriter(const std::string& path) {
-    FILE* file = fopen(path.c_str(), "wb");
-    if (!file) return;
-    file_.reset(file);
+CaptureWriter::CaptureWriter(const std::string& path)
+    : owned_(new std::ofstream(path, std::ios::binary)), out_(*owned_), failed_(false) {
+    if (owned_->is_open()) writeHeader();
+    else failed_ = true; // cannot open: writer is failed from the start
+}
 
-    // Header: magic + version (little-endian).
-    std::uint8_t header[capture_detail::kHeaderSize];
-    std::memcpy(header, kMagic.data(), kMagic.size());
-    capture_detail::writeU32Le(header + 8, kVersion);
-    if (fwrite(header, 1, sizeof(header), file_.get()) != sizeof(header)) {
-        file_.reset(); // failed to write the header: unusable capture
-    }
+CaptureWriter::CaptureWriter(std::ostream& out)
+    : owned_(), out_(out), failed_(false) {
+    writeHeader();
 }
 
 CaptureWriter::~CaptureWriter() = default;
 
+void CaptureWriter::writeHeader() {
+    // Magic + version (little-endian).
+    std::array<std::uint8_t, capture_detail::kHeaderSize> header{};
+    std::memcpy(header.data(), kMagic.data(), kMagic.size());
+    const std::array<std::uint8_t, 4> version = capture_detail::encodeU32Le(kVersion);
+    for (std::size_t i = 0; i < version.size(); ++i) header[8 + i] = version[i];
+    out_.write(reinterpret_cast<const char*>(header.data()),
+               static_cast<std::streamsize>(header.size()));
+    // flush() is REQUIRED for correct failure semantics: a buffered stream
+    // hides short writes and I/O errors until the buffer is flushed, so an
+    // unwritten flush would let ok() keep reporting success.
+    out_.flush();
+    if (!out_) failed_ = true;
+}
+
 void CaptureWriter::writeEvent(const CaptureEvent& event) {
-    if (!file_) return;
+    // After a failed write the writer stays failed: no misleading "valid"
+    // truncated captures, and later writes are predictable no-ops.
+    if (!ok()) {
+        failed_ = true;
+        return;
+    }
     const capture_detail::EncodedRecord record = capture_detail::encodeRecord(event);
-    fwrite(record.bytes.data(), 1, record.length, file_.get());
+    out_.write(reinterpret_cast<const char*>(record.bytes.data()),
+               static_cast<std::streamsize>(record.length));
+    out_.flush(); // see writeHeader(): buffered streams hide write failures
+    if (!out_) failed_ = true;
 }
 
 // ---------------------------------------------------------------------------
 // Reader
 
-CaptureReader::CaptureReader(const std::string& path) : corrupt_(0) {
-    FILE* file = fopen(path.c_str(), "rb");
-    if (!file) return;
-    file_.reset(file);
+CaptureReader::CaptureReader(const std::string& path)
+    : owned_(new std::ifstream(path, std::ios::binary)), in_(*owned_), corrupt_(0) {
+    if (!in_.good()) return;
 
     std::array<char, 8> magic{};
-    if (fread(magic.data(), 1, magic.size(), file_.get()) != magic.size() ||
-        std::memcmp(magic.data(), kMagic.data(), kMagic.size()) != 0) {
-        file_.reset(); // not a .cmi capture
+    in_.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+    if (!in_ || std::memcmp(magic.data(), kMagic.data(), kMagic.size()) != 0) {
+        in_.setstate(std::ios::failbit); // not a .cmi capture
         return;
     }
     std::array<std::uint8_t, 4> versionBytes{};
-    if (fread(versionBytes.data(), 1, versionBytes.size(), file_.get()) !=
-        versionBytes.size()) {
-        file_.reset(); // truncated header
-        return;
-    }
-    const std::uint32_t version = capture_detail::readU32Le(versionBytes.data());
+    in_.read(reinterpret_cast<char*>(versionBytes.data()),
+             static_cast<std::streamsize>(versionBytes.size()));
+    if (!in_) return; // truncated header
+
+    const std::uint32_t version = capture_detail::decodeU32Le(versionBytes);
     if (version != kVersion) {
         // Unsupported versions are rejected, never guessed.
-        file_.reset();
+        in_.setstate(std::ios::failbit);
+        return;
+    }
+}
+
+CaptureReader::CaptureReader(std::istream& in) : in_(in), corrupt_(0) {
+    if (!in_.good()) return;
+
+    std::array<char, 8> magic{};
+    in_.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+    if (!in_ || std::memcmp(magic.data(), kMagic.data(), kMagic.size()) != 0) {
+        in_.setstate(std::ios::failbit);
+        return;
+    }
+    std::array<std::uint8_t, 4> versionBytes{};
+    in_.read(reinterpret_cast<char*>(versionBytes.data()),
+             static_cast<std::streamsize>(versionBytes.size()));
+    if (!in_) return;
+
+    const std::uint32_t version = capture_detail::decodeU32Le(versionBytes);
+    if (version != kVersion) {
+        in_.setstate(std::ios::failbit);
         return;
     }
 }
 
 CaptureReader::~CaptureReader() = default;
 
-template <std::size_t N>
-CaptureReader::RawRead<N> CaptureReader::readBytes() {
-    RawRead<N> read;
-    read.status = RawRead<N>::Status::Eof;
-    const std::size_t got = fread(read.bytes.data(), 1, N, file_.get());
-    if (got == N) read.status = RawRead<N>::Status::Ok;
-    else if (got > 0) read.status = RawRead<N>::Status::Partial;
-    return read;
-}
-
 bool CaptureReader::next(CaptureEvent& out) {
-    if (!file_) return false;
+    if (!in_.good()) return false;
 
-    // A clean stream always ends on a record boundary: 0 bytes read = EOF,
-    // 1..N-1 bytes read = truncated record = corruption.
-    const RawRead<8> timestamp = readBytes<8>();
-    if (timestamp.status == RawRead<8>::Status::Eof) return false;
-    if (timestamp.status == RawRead<8>::Status::Partial) { ++corrupt_; return false; }
-
-    const RawRead<3> header = readBytes<3>();
-    if (header.status != RawRead<3>::Status::Ok) { ++corrupt_; return false; }
-
-    const std::uint8_t length = header.bytes[2];
-    if (length > 3) { ++corrupt_; return false; }
-    std::array<std::uint8_t, 3> payload{};
-    if (length > 0) {
-        const std::size_t got = fread(payload.data(), 1, length, file_.get());
-        if (got != length) { ++corrupt_; return false; }
-    }
-
-    // Assemble the full record and run it through the pure codec (bounds and
-    // structure validation live there).
+    // Assemble one record; read() distinguishes clean EOF (0 bytes) from a
+    // truncated record (1..N-1 bytes) via gcount.
     std::array<std::uint8_t, capture_detail::kMaxRecordSize> buffer{};
-    for (std::size_t i = 0; i < 8; ++i) buffer[i] = timestamp.bytes[i];
-    for (std::size_t i = 0; i < 3; ++i) buffer[8 + i] = header.bytes[i];
-    for (std::uint8_t i = 0; i < length; ++i) buffer[11 + i] = payload[i];
+    std::size_t got = 0;
 
+    // Timestamp (8).
+    in_.read(reinterpret_cast<char*>(buffer.data()), 8);
+    const std::streamsize tsGot = in_.gcount();
+    if (tsGot == 0 && in_.eof()) return false; // clean EOF
+    if (tsGot != 8) { ++corrupt_; return false; }
+    got += 8;
+
+    // Record header (3).
+    in_.read(reinterpret_cast<char*>(buffer.data() + got), 3);
+    if (in_.gcount() != 3) { ++corrupt_; return false; }
+    got += 3;
+
+    // Payload.
+    const std::uint8_t length = buffer[10];
+    if (length > 3) { ++corrupt_; return false; }
+    if (length > 0) {
+        in_.read(reinterpret_cast<char*>(buffer.data() + got), length);
+        if (in_.gcount() != length) { ++corrupt_; return false; }
+    }
+    got += length;
+
+    // Full structural validation in the pure codec.
     const capture_detail::DecodedRecord record =
-        capture_detail::decodeRecord(buffer.data(), capture_detail::kRecordHeaderSize + length);
+        capture_detail::decodeRecord(buffer.data(), got);
     if (record.status != capture_detail::DecodeStatus::Ok) {
         ++corrupt_;
         return false;

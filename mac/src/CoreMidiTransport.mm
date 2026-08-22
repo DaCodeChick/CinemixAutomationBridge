@@ -29,72 +29,100 @@ CoreMidiTransport::CoreMidiTransport(cinemix::Diagnostics& diag)
     : diag_(diag),
       client_(0), inPort_(0), src1_(0), src2_(0),
       outPort1_(0), outPort2_(0),
-      dst1_(static_cast<MIDIEndpointRef>(0)), dst2_(static_cast<MIDIEndpointRef>(0)),
-      topologyDirty_(false), topologyHandler_(nullptr), topologyUser_(nullptr) {
+      dst1_(static_cast<MIDIEndpointRef>(0)), dst2_(static_cast<MIDIEndpointRef>(0)) {
 }
 
 CoreMidiTransport::~CoreMidiTransport() {
-    if (inPort_) {
-        MIDIPortDisconnectSource(inPort_, src1_);
-        MIDIPortDisconnectSource(inPort_, src2_);
+    shutdown();
+}
+
+void CoreMidiTransport::shutdown() noexcept {
+    // Idempotent, order-safe disposal of every resource that may exist at
+    // any stage of initialization. Sources are disconnected before the input
+    // port is disposed; ports before the client.
+    if (inPort_ != 0) {
+        if (src1_ != 0) MIDIPortDisconnectSource(inPort_, src1_);
+        if (src2_ != 0) MIDIPortDisconnectSource(inPort_, src2_);
+        src1_ = 0;
+        src2_ = 0;
         MIDIPortDispose(inPort_);
+        inPort_ = 0;
     }
-    if (outPort1_) MIDIPortDispose(outPort1_);
-    if (outPort2_) MIDIPortDispose(outPort2_);
-    if (client_) MIDIClientDispose(client_);
+    if (outPort1_ != 0) { MIDIPortDispose(outPort1_); outPort1_ = 0; }
+    if (outPort2_ != 0) { MIDIPortDispose(outPort2_); outPort2_ = 0; }
+    dst1_.store(0, std::memory_order_release);
+    dst2_.store(0, std::memory_order_release);
+    if (client_ != 0) { MIDIClientDispose(client_); client_ = 0; }
 }
 
 bool CoreMidiTransport::start() {
-    const OSStatus clientErr = MIDIClientCreate(
-        CFSTR("CinemixAutomationBridge"), &CoreMidiTransport::notifyProc, this, &client_);
+    // Every required step is checked; on failure everything created so far
+    // is disposed and start() reports failure — never a half-initialized
+    // transport that claims to be operational.
+    const OSStatus clientErr =
+        MIDIClientCreate(CFSTR("CinemixAutomationBridge"), nullptr, nullptr, &client_);
     if (clientErr != noErr) {
         diag_.error("CoreMIDI: cannot create MIDI client");
+        client_ = 0;
         return false;
     }
-    // One input port; connect both console sources to it. The read proc must
-    // stay real-time safe: it only forwards bytes.
-    const OSStatus inErr = MIDIInputPortCreate(client_, CFSTR("Cinemix In"), &CoreMidiTransport::readProc, this, &inPort_);
+
+    const OSStatus inErr =
+        MIDIInputPortCreate(client_, CFSTR("Cinemix In"), &CoreMidiTransport::readProc, this,
+                            &inPort_);
     if (inErr != noErr) {
         diag_.error("CoreMIDI: cannot create input port");
+        shutdown();
         return false;
     }
-    MIDIOutputPortCreate(client_, CFSTR("Cinemix Out LO"), &outPort1_);
-    MIDIOutputPortCreate(client_, CFSTR("Cinemix Out HI"), &outPort2_);
+
+    const OSStatus out1Err = MIDIOutputPortCreate(client_, CFSTR("Cinemix Out LO"), &outPort1_);
+    if (out1Err != noErr) {
+        diag_.error("CoreMIDI: cannot create output port 1 (LO)");
+        shutdown();
+        return false;
+    }
+    const OSStatus out2Err = MIDIOutputPortCreate(client_, CFSTR("Cinemix Out HI"), &outPort2_);
+    if (out2Err != noErr) {
+        diag_.error("CoreMIDI: cannot create output port 2 (HI)");
+        shutdown();
+        return false;
+    }
     return true;
 }
 
 std::vector<std::string> CoreMidiTransport::inputNames() const {
     std::vector<std::string> names;
-    const ItemCount n = MIDIGetNumberOfSources();
-    for (ItemCount i = 0; i < n; ++i)
+    const ItemCount count = MIDIGetNumberOfSources();
+    for (ItemCount i = 0; i < count; ++i)
         names.push_back(endpointName(MIDIGetSource(i)));
     return names;
 }
 
 std::vector<std::string> CoreMidiTransport::outputNames() const {
     std::vector<std::string> names;
-    const ItemCount n = MIDIGetNumberOfDestinations();
-    for (ItemCount i = 0; i < n; ++i)
+    const ItemCount count = MIDIGetNumberOfDestinations();
+    for (ItemCount i = 0; i < count; ++i)
         names.push_back(endpointName(MIDIGetDestination(i)));
     return names;
 }
 
 MIDIEndpointRef CoreMidiTransport::findSource(const std::string& name) {
     if (name.empty()) return 0;
-    const ItemCount n = MIDIGetNumberOfSources();
-    for (ItemCount i = 0; i < n; ++i) {
-        MIDIEndpointRef ep = MIDIGetSource(i);
-        if (endpointName(ep) == name) return ep;
+    const ItemCount count = MIDIGetNumberOfSources();
+    for (ItemCount i = 0; i < count; ++i) {
+        MIDIEndpointRef endpoint = MIDIGetSource(i);
+        if (endpointName(endpoint) == name) return endpoint;
     }
     return 0;
 }
 
 MIDIEndpointRef CoreMidiTransport::findDestination(const std::string& name) {
     if (name.empty()) return 0;
-    const ItemCount n = MIDIGetNumberOfDestinations();
-    for (ItemCount i = 0; i < n; ++i) {
-        MIDIEndpointRef ep = MIDIGetDestination(i);
-        if (endpointName(ep) == name) return ep;
+    const ItemCount count = MIDIGetNumberOfDestinations();
+    for (ItemCount i = 0; i < count; ++i) {
+        MIDIEndpointRef endpoint = MIDIGetDestination(i);
+        if (endpointName(endpoint) == name) return endpoint;
     }
     return 0;
 }
@@ -109,8 +137,14 @@ bool CoreMidiTransport::selectInputs(const std::string& loSource, const std::str
         if (src2_) MIDIPortDisconnectSource(inPort_, src2_);
         src1_ = 0;
         src2_ = 0;
-        if (lo) { MIDIPortConnectSource(inPort_, lo, nullptr); src1_ = lo; }
-        if (hi) { MIDIPortConnectSource(inPort_, hi, nullptr); src2_ = hi; }
+        if (lo) {
+            if (MIDIPortConnectSource(inPort_, lo, nullptr) == noErr) src1_ = lo;
+            else diag_.warning("CoreMIDI: connect failed for input 1: " + loSource);
+        }
+        if (hi) {
+            if (MIDIPortConnectSource(inPort_, hi, nullptr) == noErr) src2_ = hi;
+            else diag_.warning("CoreMIDI: connect failed for input 2: " + hiSource);
+        }
     }
     if (!lo && !loSource.empty()) diag_.warning("MIDI input 1 not found: " + loSource);
     if (!hi && !hiSource.empty()) diag_.warning("MIDI input 2 not found: " + hiSource);
@@ -152,7 +186,7 @@ bool CoreMidiTransport::sendTo(MIDIEndpointRef dest, MIDIPortRef port,
     return MIDISend(port, dest, &pktlist) == noErr;
 }
 
-bool CoreMidiTransport::send(uint8_t port, const cinemix::MidiMessage& message) {
+bool CoreMidiTransport::send(std::uint8_t port, const cinemix::MidiMessage& message) {
     const MIDIEndpointRef d1 = dst1_.load(std::memory_order_acquire);
     const MIDIEndpointRef d2 = dst2_.load(std::memory_order_acquire);
     bool ok = true;
@@ -162,28 +196,15 @@ bool CoreMidiTransport::send(uint8_t port, const cinemix::MidiMessage& message) 
 }
 
 void CoreMidiTransport::readProc(const MIDIPacketList* pktlist, void* refCon, void* /*connRefCon*/) {
+    // Real-time safe: forward raw bytes only. CoreMIDI serializes read-proc
+    // invocations per input port, which is the engine's single-producer
+    // contract for the inbound byte ring.
     CoreMidiTransport* self = static_cast<CoreMidiTransport*>(refCon);
     if (!self->onIncoming) return;
     const MIDIPacket* pkt = &pktlist->packet[0];
     for (UInt32 i = 0; i < pktlist->numPackets; ++i) {
-        // Forward raw bytes; the engine's lock-free queue absorbs them and
-        // the worker thread does all parsing. No allocation here.
         self->onIncoming(pkt->data, pkt->length);
         pkt = MIDIPacketNext(pkt);
-    }
-}
-
-void CoreMidiTransport::notifyProc(const MIDINotification* message, void* refCon) {
-    CoreMidiTransport* self = static_cast<CoreMidiTransport*>(refCon);
-    switch (message->messageID) {
-    case kMIDIMsgSetupChanged:
-    case kMIDIMsgObjectAdded:
-    case kMIDIMsgObjectRemoved:
-    case kMIDIMsgPropertyChanged:
-        self->topologyDirty_.store(true, std::memory_order_release);
-        break;
-    default:
-        break;
     }
 }
 

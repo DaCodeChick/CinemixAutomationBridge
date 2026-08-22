@@ -38,15 +38,18 @@
 
 ```
  [Logic audio thread]  Render: write silence only.
-                       SetParameter: atomic<float> store + lock-free push
-                                     {paramId, value} into host-event SPSC ring.
+                       SetParameter: two atomic stores (value + per-parameter
+                                     dirty flag) — wait-free, MULTI-PRODUCER
+                                     safe (no producer-count assumption; the
+                                     worker scans flags every tick).
 
  [CoreMIDI read proc]  Copy raw packet bytes into inbound SPSC byte ring.
-                       No allocation, no parsing, no logging.
+                       No allocation, no parsing, no logging. Single producer
+                       by contract: CoreMIDI serializes a port's read proc.
 
  [Bridge worker thread] (1 per bridge; owns engine + scheduler)
    1. drain inbound byte ring → run-length-safe parser → ConsoleEvents
-   2. drain host-event ring → engine.onHostParameter
+   2. scan per-parameter host-write dirty flags → engine.setParamInternal
    3. engine logic (touch modes, origins, echo suppression, commands)
    4. scheduler tick (1 ms): outbound budget → MIDIPacketList → MIDISend
    5. notify AU listeners (begin/change/end gesture) for user-originated changes
@@ -59,7 +62,13 @@
 * All MIDI I/O happens on the worker thread; CoreMIDI's `MIDISend` is
   thread-safe and non-blocking in practice.
 * Queues are fixed-size; overflow is counted and reported in diagnostics
-  (never fatal, never blocking on the audio thread).
+  (never fatal, never blocking on the audio thread). The outbound lanes have
+  an explicit cap policy: commands beyond the cap are dropped and counted —
+  except SystemReset, which is safety-critical and evicts the oldest entry
+  (docs in TransmissionScheduler.h).
+* CoreMIDI topology refresh is POLLING-based (the Cocoa view re-enumerates
+  endpoints on its 0.5 s timer). There is deliberately no notification
+  callback API — one coherent mechanism, not two half-working ones (§7).
 
 ## 3. Data model (core/cinemix)
 

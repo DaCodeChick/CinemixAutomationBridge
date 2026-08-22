@@ -22,16 +22,12 @@ struct BridgeContext {
     CoreMidiTransport* transport;
 };
 
-// Component identity (stable; subtype 'DRcm' kept from the legacy bridge).
-//   type 'augn' (generator: no audio inputs, silence output) — loads into an
-//   instrument slot in Logic, exactly how the legacy VST instrument was used.
-const AudioComponentDescription kCinemixComponentDescription = {
-    kAudioUnitType_Generator, // 'augn'
-    'DRcm',                   // subtype (legacy _Plugin_Unique_ID_)
-    'CBRG',                   // manufacturer
-    0,
-    0,
-};
+// Component identity (declared in Resources/Info.plist and registered by the
+// AUSDK_COMPONENT_ENTRY macro in CinemixAU.h; documented here as the
+// contract): type 'augn' (generator: no audio inputs, silence output) loads
+// into an instrument slot in Logic, exactly how the legacy VST instrument was
+// used. Subtype 'DRcm' is kept from the legacy bridge (_Plugin_Unique_ID_);
+// manufacturer 'CBRG' is new, so the old GSi AU cannot conflict.
 
 } // namespace cinemix_mac
 

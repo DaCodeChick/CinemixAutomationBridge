@@ -11,20 +11,26 @@
 //     u8   length       (1..3)
 //     u8[] bytes
 //
-// Split into two layers:
-//   * capture_detail — pure record codec (byte arrays in/out, no file I/O):
-//     unit-testable in memory, little-endian by explicit shifts (no host
-//     endianness assumptions).
-//   * CaptureWriter/CaptureReader — the file layer: RAII FILE ownership
-//     (unique_ptr with an fclose deleter), explicit header/version handling,
-//     clean-EOF vs truncated-record distinction.
+// Layers:
+//   * capture_detail — pure record codec over caller-owned buffers
+//     (value-returning, no unchecked pointers, full field validation,
+//     little-endian via explicit shifts — no host endianness assumptions).
+//   * CaptureWriter/CaptureReader — the stream layer. Standard library
+//     streams were chosen over FILE* deliberately (second audit, brief §7):
+//     capture I/O is not a real-time path, std::ofstream/std::ifstream give
+//     RAII ownership, explicit stream state for failure propagation, and the
+//     same classes accept in-memory stringstreams for testing — the simpler
+//     robust design. A writer that has suffered a failed write leaves ok()
+//     false and silently ignores further writes; it never produces a
+//     supposedly valid truncated capture.
 #ifndef CINEMIX_CAPTURE_FILE_H
 #define CINEMIX_CAPTURE_FILE_H
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
+#include <fstream>
+#include <iosfwd>
 #include <memory>
 #include <string>
 
@@ -45,6 +51,12 @@ constexpr std::size_t kHeaderSize = 12;        // magic(8) + version(4)
 constexpr std::size_t kRecordHeaderSize = 11;  // timestamp(8) + direction(1) + port(1) + length(1)
 constexpr std::size_t kMaxRecordSize = kRecordHeaderSize + 3; // max message length
 
+constexpr std::uint8_t kDirectionInbound = 0;
+constexpr std::uint8_t kDirectionOutbound = 1;
+constexpr std::uint8_t kPortBroadcast = 0;
+constexpr std::uint8_t kPortLo = 1;
+constexpr std::uint8_t kPortHi = 2;
+
 // A fully encoded record, header included.
 struct EncodedRecord {
     std::array<std::uint8_t, kMaxRecordSize> bytes{};
@@ -54,7 +66,7 @@ struct EncodedRecord {
 enum class DecodeStatus {
     Ok,
     Truncated, // ran out of bytes mid-record
-    Malformed, // structurally invalid (bad length, direction, …)
+    Malformed, // structurally invalid (bad length, direction, port, …)
 };
 
 struct DecodedRecord {
@@ -63,11 +75,37 @@ struct DecodedRecord {
     std::size_t consumed; // bytes consumed from the buffer (0 unless Ok)
 };
 
-// Pure codecs — little-endian via explicit shifts.
-void writeU32Le(std::uint8_t* out, std::uint32_t value) noexcept;
-void writeU64Le(std::uint8_t* out, std::uint64_t value) noexcept;
-std::uint32_t readU32Le(const std::uint8_t* in) noexcept;
-std::uint64_t readU64Le(const std::uint8_t* in) noexcept;
+// Pure little-endian codecs — the encoded size lives in the type, the
+// functions are constexpr, and there is no unchecked output pointer.
+constexpr std::array<std::uint8_t, 4> encodeU32Le(std::uint32_t value) noexcept {
+    return {static_cast<std::uint8_t>(value & 0xFFu),
+            static_cast<std::uint8_t>((value >> 8) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 16) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 24) & 0xFFu)};
+}
+constexpr std::array<std::uint8_t, 8> encodeU64Le(std::uint64_t value) noexcept {
+    return {static_cast<std::uint8_t>(value & 0xFFu),
+            static_cast<std::uint8_t>((value >> 8) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 16) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 24) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 32) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 40) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 48) & 0xFFu),
+            static_cast<std::uint8_t>((value >> 56) & 0xFFu)};
+}
+constexpr std::uint32_t decodeU32Le(const std::array<std::uint8_t, 4>& bytes) noexcept {
+    return static_cast<std::uint32_t>(bytes[0]) |
+           (static_cast<std::uint32_t>(bytes[1]) << 8) |
+           (static_cast<std::uint32_t>(bytes[2]) << 16) |
+           (static_cast<std::uint32_t>(bytes[3]) << 24);
+}
+constexpr std::uint64_t decodeU64Le(const std::array<std::uint8_t, 8>& bytes) noexcept {
+    std::uint64_t value = 0;
+    for (int i = 0; i < 8; ++i)
+        value |= static_cast<std::uint64_t>(bytes[static_cast<std::size_t>(i)])
+                 << (8 * i);
+    return value;
+}
 
 EncodedRecord encodeRecord(const CaptureEvent& event);
 DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept;
@@ -75,38 +113,48 @@ DecodedRecord decodeRecord(const std::uint8_t* data, std::size_t size) noexcept;
 } // namespace capture_detail
 
 // ---------------------------------------------------------------------------
-// File layer — explicit, RAII-managed FILE ownership.
+// Stream layer — RAII-owned std::ofstream/std::ifstream (or caller-owned
+// streams for in-memory testing).
 
 class CaptureWriter {
 public:
+    // Owning variant: the writer creates and owns its file stream.
     explicit CaptureWriter(const std::string& path);
+    // Borrowed variant (tests): the stream is owned by the caller and must
+    // outlive the writer.
+    explicit CaptureWriter(std::ostream& out);
     ~CaptureWriter();
     CaptureWriter(const CaptureWriter&) = delete;
     CaptureWriter& operator=(const CaptureWriter&) = delete;
 
-    bool ok() const { return file_ != nullptr; }
-    // Appends one record. No-op when the writer failed to open.
+    // True while the header has been written and no write has failed.
+    // Once a write fails, ok() stays false and writeEvent() becomes a no-op:
+    // the writer never pretends to have produced a valid capture.
+    bool ok() const { return !failed_ && out_.good(); }
+
     void writeEvent(const CaptureEvent& event);
 
 private:
-    struct FileCloser {
-        void operator()(FILE* file) const noexcept {
-            if (file) fclose(file);
-        }
-    };
-    std::unique_ptr<FILE, FileCloser> file_;
+    void writeHeader();
+
+    // Declaration order matters: owned_ first, so the reference out_ can bind
+    // to *owned_ in the initializer list of the owning constructor.
+    std::unique_ptr<std::ofstream> owned_;
+    std::ostream& out_;
+    bool failed_;
 };
 
 class CaptureReader {
 public:
     explicit CaptureReader(const std::string& path);
+    explicit CaptureReader(std::istream& in);
     ~CaptureReader();
     CaptureReader(const CaptureReader&) = delete;
     CaptureReader& operator=(const CaptureReader&) = delete;
 
-    // False when the file could not be opened or is not a supported .cmi
-    // (wrong magic or unsupported version — versions are NOT guessed).
-    bool ok() const { return file_ != nullptr; }
+    // False when the stream could not be opened or is not a supported .cmi
+    // (wrong magic or unsupported version — versions are never guessed).
+    bool ok() const { return in_.good(); }
 
     // Reads the next event. False at clean EOF; truncated/corrupt records
     // also return false and increment corruptCount().
@@ -115,22 +163,9 @@ public:
     std::size_t corruptCount() const { return corrupt_; }
 
 private:
-    struct FileCloser {
-        void operator()(FILE* file) const noexcept {
-            if (file) fclose(file);
-        }
-    };
-    // Reads exactly `count` bytes: Ok, Eof (0 bytes) or Partial (truncation).
-    template <std::size_t N>
-    struct RawRead {
-        enum class Status { Ok, Eof, Partial };
-        Status status;
-        std::array<std::uint8_t, N> bytes{};
-    };
-    template <std::size_t N>
-    RawRead<N> readBytes();
-
-    std::unique_ptr<FILE, FileCloser> file_;
+    // Declaration order matters (see CaptureWriter).
+    std::unique_ptr<std::ifstream> owned_;
+    std::istream& in_;
     std::size_t corrupt_;
 };
 

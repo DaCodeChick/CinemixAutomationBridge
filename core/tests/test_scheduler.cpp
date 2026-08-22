@@ -150,6 +150,27 @@ TEST_CASE("scheduler: transport failure counts as dropped") {
     CHECK_EQ(f.sched.droppedTotal(), static_cast<size_t>(1));
 }
 
+TEST_CASE("scheduler: queue-cap policy — drops count, SystemReset always admitted") {
+    Fixture f;
+    // Fill the main lane past its cap with ordinary commands: the overflow
+    // drops the NEWEST command and counts it.
+    for (int i = 0; i < 1100; ++i) f.sched.enqueueCommand(cmd(3, 64, 1));
+    const size_t beforeReset = f.sched.pending();
+    CHECK(beforeReset <= 1024);
+    CHECK(f.sched.droppedTotal() > 0);
+
+    // The release byte is safety-critical: it is always admitted even when
+    // the lane is full (evicting the oldest entry).
+    OutboundCommand reset;
+    reset.kind = CommandKind::SystemReset;
+    reset.message = MidiMessage::systemReset(0);
+    f.sched.enqueueCommand(reset);
+    CHECK(f.sched.pending() <= 1024);
+
+    f.sched.drainToEmpty();
+    CHECK(f.transport.sentToPort1.back().isSystemReset());
+}
+
 TEST_CASE("scheduler: system reset passes through as a 1-byte message") {
     Fixture f;
     OutboundCommand c;

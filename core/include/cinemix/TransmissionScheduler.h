@@ -13,6 +13,18 @@
 // The scheduler is single-threaded by design: only the bridge worker thread
 // calls it (the engine funnels host/UI writes through the worker first).
 // `drainToEmpty()` exists for tests/harness and ignores pacing.
+//
+// Queue-full policy (explicit):
+//   * position updates coalesce per parameter, so the main lane can never
+//     hold more than paramCount position entries;
+//   * both lanes additionally cap their TOTAL size at kMaxQueuedCommands;
+//     a command that exceeds the cap is dropped and counted (rate-limited
+//     warning) — except SystemReset, which is safety-critical and instead
+//     evicts the oldest queued entry;
+//   * the high lane (touch mode replies) drops the NEWEST reply on overflow
+//     (mode values are absolute state; the next reply supersedes), never
+//     evicting older replies (their order matters to the touch state
+//     machine).
 #ifndef CINEMIX_TRANSMISSION_SCHEDULER_H
 #define CINEMIX_TRANSMISSION_SCHEDULER_H
 
@@ -79,6 +91,11 @@ private:
 
     std::deque<Entry> high_;
     std::deque<Entry> main_;
+
+    // Hard bound on each lane's TOTAL size (positions + commands). Chosen far
+    // above the largest legitimate burst (activation ≈ 360 entries) so it
+    // only engages on a runaway producer.
+    static constexpr std::size_t kMaxQueuedCommands = 1024;
 
     double credit_;
     double budgetPerTick_;

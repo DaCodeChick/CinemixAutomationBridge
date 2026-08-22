@@ -110,15 +110,14 @@ struct MidiMessage {
 // the automation engine; it only sees these.
 enum class EventKind : std::uint8_t {
     FaderPosition = 0, // normalized position available
-    MuteChanged = 1,   // `on` available
+    MuteChanged = 1,   // `on` available (strip mutes AND joystick mutes)
     TouchBegin = 2,
     TouchEnd = 3,
     SelPressed = 4,      // strip SEL button
     MasterSelPressed = 5,
-    JoyMuteChanged = 6,
-    AuxMuteChanged = 7,
-    Unknown = 8, // valid MIDI CC, not part of the protocol (diagnostic)
-    Ignored = 9, // protocol CC with a value we deliberately ignore
+    AuxMuteChanged = 6,
+    Unknown = 7, // valid MIDI CC, not part of the protocol (diagnostic)
+    Ignored = 8, // protocol CC with a value we deliberately ignore
 };
 
 struct ConsoleEvent {
@@ -140,6 +139,7 @@ enum class CommandKind : std::uint8_t {
     SetMode = 0,     // strip/master/joystick SEL value 0..3
     RemoteControl = 1, // CC127 ch5: 127 = enter, 0 = exit remote mode
     SystemReset = 2, // 0xFF byte
+    PositionUpdate = 3, // absolute position/state for one parameter
 };
 
 struct OutboundCommand {

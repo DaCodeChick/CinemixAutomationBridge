@@ -1,6 +1,7 @@
 // CaptureFile (.cmi) tests — record codec + file round trips.
 #include <cstdio>
 #include <string>
+#include <sstream>
 #include <unistd.h>
 
 #include "TestFramework.h"
@@ -46,16 +47,18 @@ TEST_CASE("capture codec: record round trip is lossless") {
     CHECK_EQ(static_cast<int>(decoded.event.message.data[2]), 63);
 }
 
-TEST_CASE("capture codec: little-endian primitives") {
-    std::array<std::uint8_t, 8> bytes{};
-    capture_detail::writeU64Le(bytes.data(), 0x0102030405060708ULL);
-    CHECK_EQ(capture_detail::readU64Le(bytes.data()), 0x0102030405060708ULL);
-    CHECK_EQ(static_cast<int>(bytes[0]), 0x08); // least significant byte first
+TEST_CASE("capture codec: little-endian primitives (size in the type)") {
+    constexpr std::array<std::uint8_t, 8> encoded64 =
+        capture_detail::encodeU64Le(0x0102030405060708ULL);
+    CHECK_EQ(capture_detail::decodeU64Le(encoded64), 0x0102030405060708ULL);
+    CHECK_EQ(static_cast<int>(encoded64[0]), 0x08); // least significant byte first
+    static_assert(encoded64.size() == 8, "u64 encodes to 8 bytes");
 
-    std::array<std::uint8_t, 4> u32{};
-    capture_detail::writeU32Le(u32.data(), 0xDEADBEEFu);
-    CHECK_EQ(capture_detail::readU32Le(u32.data()), 0xDEADBEEFu);
-    CHECK_EQ(static_cast<int>(u32[0]), 0xEF);
+    constexpr std::array<std::uint8_t, 4> encoded32 =
+        capture_detail::encodeU32Le(0xDEADBEEFu);
+    CHECK_EQ(capture_detail::decodeU32Le(encoded32), 0xDEADBEEFu);
+    CHECK_EQ(static_cast<int>(encoded32[0]), 0xEF);
+    static_assert(encoded32.size() == 4, "u32 encodes to 4 bytes");
 }
 
 TEST_CASE("capture codec: truncated and malformed records rejected") {
@@ -162,6 +165,63 @@ TEST_CASE("capture: truncated event stream stops cleanly") {
     CHECK(!reader.next(event)); // truncated record → stop
     CHECK(reader.corruptCount() > 0);
     std::remove(path.c_str());
+}
+
+TEST_CASE("capture codec: invalid direction and port fields are Malformed") {
+    const MidiMessage cc = MidiMessage::controlChange(1, 0, 63, 1);
+    const capture_detail::EncodedRecord encoded =
+        capture_detail::encodeRecord(makeEvent(1, 0, 0, cc));
+
+    // direction = 7: invalid.
+    std::array<std::uint8_t, capture_detail::kMaxRecordSize> bad{};
+    for (size_t i = 0; i < 11; ++i) bad[i] = encoded.bytes[i];
+    bad[8] = 7;
+    capture_detail::DecodedRecord decoded =
+        capture_detail::decodeRecord(bad.data(), 11 + 3);
+    CHECK(decoded.status == capture_detail::DecodeStatus::Malformed);
+
+    // port = 9: invalid.
+    for (size_t i = 0; i < 11; ++i) bad[i] = encoded.bytes[i];
+    bad[9] = 9;
+    decoded = capture_detail::decodeRecord(bad.data(), 11 + 3);
+    CHECK(decoded.status == capture_detail::DecodeStatus::Malformed);
+}
+
+TEST_CASE("capture: failed writes leave the writer failed, not healthy") {
+    // /dev/full: every write fails with ENOSPC on Linux (POSIX).
+    if (FILE* probe = fopen("/dev/full", "wb")) {
+        fclose(probe);
+        {
+            CaptureWriter writer("/dev/full");
+            // Opening succeeds; the header write fails.
+            CHECK(!writer.ok());
+            // Later writes are predictable no-ops that never revive ok().
+            writer.writeEvent(makeEvent(1, 1, 1, MidiMessage::controlChange(1, 0, 63, 1)));
+            CHECK(!writer.ok());
+        }
+    }
+}
+
+TEST_CASE("capture: in-memory stream round trip (borrowed-stream API)") {
+    std::stringstream buffer(std::ios::in | std::ios::out | std::ios::binary);
+    {
+        CaptureWriter writer(buffer);
+        CHECK(writer.ok());
+        writer.writeEvent(makeEvent(1000, 1, 1, MidiMessage::controlChange(1, 0, 63, 1)));
+        writer.writeEvent(makeEvent(2000, 0, 0, MidiMessage::systemReset(0)));
+    }
+    buffer.seekg(0);
+    {
+        CaptureReader reader(buffer);
+        CHECK(reader.ok());
+        CaptureEvent event;
+        CHECK(reader.next(event));
+        CHECK_EQ(static_cast<int>(event.message.data[2]), 63);
+        CHECK(reader.next(event));
+        CHECK(event.message.isSystemReset());
+        CHECK(!reader.next(event)); // clean EOF
+        CHECK_EQ(reader.corruptCount(), static_cast<size_t>(0));
+    }
 }
 
 } // namespace

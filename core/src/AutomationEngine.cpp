@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <system_error>
 
 namespace cinemix {
 
@@ -9,7 +10,6 @@ namespace cinemix {
 // ODR rule: required when a member is odr-used, e.g. kOscillatorStepPeriod is
 // bound to a const& by the duration comparison in stepTestMode).
 constexpr std::size_t AutomationEngine::kInboundQueueBytes;
-constexpr std::size_t AutomationEngine::kHostEventQueueCapacity;
 constexpr std::size_t AutomationEngine::kInboundDrainBatch;
 constexpr std::chrono::milliseconds AutomationEngine::kOscillatorStepPeriod;
 
@@ -25,16 +25,18 @@ AutomationEngine::AutomationEngine(const MixerProfile& profile, Diagnostics& dia
       oscillator_(profile.faderCount()),
       listener_(nullptr),
       values_(new std::atomic<float>[profile.paramCount()]),
+      hostDirty_(profile.paramCount()),
       lastProcessed_(profile.paramCount(), -1.f),
       lastCommanded_(profile.paramCount(), -1.f),
       touched_(profile.paramCount(), 0),
       activated_(false), testMode_(false), allMutes_(false),
       inbound_(kInboundQueueBytes),
-      hostEvents_(kHostEventQueueCapacity),
       stopRequested_(false), workerRunning_(false) {
-    for (std::size_t i = 0; i < profile_.paramCount(); ++i)
+    for (std::size_t i = 0; i < profile_.paramCount(); ++i) {
         values_[i].store(paramMap_.info(static_cast<ParamId>(i)).defaultValue,
                          std::memory_order_relaxed);
+        hostDirty_[i].store(0, std::memory_order_relaxed);
+    }
 
     transport_.onIncoming = [this](const std::uint8_t* data, std::size_t size) {
         handleIncoming(data, size);
@@ -73,18 +75,13 @@ AutomationEngine::~AutomationEngine() {
 
 void AutomationEngine::setHostParameter(ParamId param, float value) {
     if (param >= paramMap_.size()) return;
-    const float clamped = clamp01(value);
-    values_[param].store(clamped, std::memory_order_relaxed);
-    HostEvent event;
-    event.param = param;
-    event.value = clamped;
-    if (!hostEvents_.push(event)) {
-        // Overflow: the newest value is still stored atomically, and the
-        // worker re-reads values on drain, so only the event is lost.
-        // Rate-limit the diagnostic.
-        if ((hostEvents_.overflowCount() & 0x3Fu) == 1)
-            diag_.warning("host parameter queue overflow — updates may lag");
-    }
+    // Multi-producer safe by construction: two atomic stores, no queue.
+    // The release store of the dirty flag publishes the relaxed value store;
+    // the worker's acquire exchange observes it. Concurrent writers to the
+    // same parameter race benignly (latest value wins — the documented
+    // coalescing semantic). Wait-free, allocation-free, non-blocking.
+    values_[param].store(clamp01(value), std::memory_order_relaxed);
+    hostDirty_[param].store(1, std::memory_order_release);
 }
 
 float AutomationEngine::getParameter(ParamId param) const {
@@ -155,7 +152,15 @@ void AutomationEngine::start() {
     if (workerRunning_) return;
     stopRequested_ = false;
     workerRunning_ = true;
-    worker_ = std::thread(&AutomationEngine::workerLoop, this);
+    try {
+        worker_ = std::thread(&AutomationEngine::workerLoop, this);
+    } catch (const std::system_error&) {
+        // Thread creation failed (resource exhaustion): leave a coherent
+        // stopped state, never a half-running engine.
+        workerRunning_ = false;
+        diag_.error("cannot create bridge worker thread");
+        throw;
+    }
 }
 
 void AutomationEngine::stop() {
@@ -197,6 +202,13 @@ void AutomationEngine::parserCcCallback(void* user, std::uint8_t channel, std::u
                                         std::uint8_t value) {
     AutomationEngine* self = static_cast<AutomationEngine*>(user);
     const std::uint8_t status = static_cast<std::uint8_t>(0xB0u | ((channel - 1) & 0x0F));
+    if (static_cast<std::uint8_t>(self->diag_.level()) >=
+        static_cast<std::uint8_t>(Diagnostics::Level::MidiIn)) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "RX ch=%u cc=%u val=%u", static_cast<unsigned>(channel),
+                 static_cast<unsigned>(cc), static_cast<unsigned>(value));
+        self->diag_.midiIn(buf);
+    }
     const ConsoleEvent event = self->protocol_.decode(status, cc, value);
     self->handleConsoleEvent(event);
 }
@@ -606,17 +618,32 @@ void AutomationEngine::processInbound() {
 }
 
 void AutomationEngine::processHostEvents() {
-    HostEvent event;
-    while (hostEvents_.pop(event)) {
-        // Re-read the atomic (a newer write may have replaced the queued
-        // value): latest wins, matching the coalescing philosophy.
-        const float value = values_[event.param].load(std::memory_order_relaxed);
-        setParamInternal(event.param, value, Origin::Host, false, true);
+    // Scan the dirty flags: any host thread may have written any parameter
+    // since the last tick. Acquire pairs with the producer's release; the
+    // value is then re-read so a burst of writes coalesces to the latest
+    // (matching the legacy prev_CC_Val dedupe philosophy).
+    for (ParamId param = 0; param < paramMap_.size(); ++param) {
+        if (hostDirty_[param].exchange(0, std::memory_order_acquire) == 0) continue;
+        const float value = values_[param].load(std::memory_order_relaxed);
+        setParamInternal(param, value, Origin::Host, false, true);
     }
 }
 
 void AutomationEngine::stepTestMode() {
     if (!testMode_.load(std::memory_order_acquire)) return;
+
+    // Endpoint loss: never keep driving an oscillator into a dead transport.
+    // The oscillator stops, modes are restored and queued positions are
+    // canceled (the same immediate-stop path as explicit shutdown).
+    if (!transport_.connected()) {
+        diag_.warning("test mode stopped: MIDI transport disconnected");
+        testMode_.store(false, std::memory_order_release);
+        touchModes_.restoreAllStripModes(savedStripModes_);
+        savedStripModes_.clear();
+        scheduler_.cancelAllPositions();
+        return;
+    }
+
     const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
     if (now - lastOscillatorStep_ < kOscillatorStepPeriod) return;
     lastOscillatorStep_ = now;
